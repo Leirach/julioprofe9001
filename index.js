@@ -1,35 +1,44 @@
 var Discord = require('discord.io');
 var logger = require('winston');
 var auth = require('./auth.json');
-// Configure logger settings
+var reply = require('./reply.json');
+
+//logger settings
 logger.remove(logger.transports.Console);
 logger.add(new logger.transports.Console, {
     colorize: true
 });
 logger.level = 'debug';
-// Initialize Discord Bot
+
+//init bot
 var bot = new Discord.Client({
    token: auth.token,
    autorun: true
 });
+
+//connect
 bot.on('ready', function (evt) {
     logger.info('Connected');
     logger.info('Logged in as: ');
     logger.info(bot.username + ' - (' + bot.id + ')');
 });
+
+//reply to messages
 bot.on('message', function (user, userID, channelID, message, evt) {
-    // Our bot needs to know if it will execute a command
-    // It will listen for messages that will start with `!`
+    answer = reply[message];
     if (message) {
-        switch(message) {
-            // !ping
-            case "famous niggas":
-                bot.sendMessage({
-                    to: channelID,
-                    message: "I'm alive fool!"
-                });
-            break;
-            // Just add any case commands if you want to..
-         }
-     }
+        bot.sendMessage({
+            to: channelID,
+            message: reply[message]
+        });
+    }
+
 });
+
+/*
+falta
+!oraculo
+!xd
+!navyseals
+!copypasta
+*/
