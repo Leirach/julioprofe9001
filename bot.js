@@ -1,72 +1,76 @@
-var Discord = require('discord.io');
+var Discord = require('discord.js');
 var logger = require('winston');
-var index = require('./index.js');
 var replies = require('./memes/reply.json');
 var utilities = require('./utilities');
+
 var copypastas = utilities.loadCopypastas();
+var custom_emojis;
 
 //connect bot
-exports.init = function() {
-    bot = index.bot;
-    
+exports.init = function(bot) {
     bot.on('ready', function (evt) {
         logger.info('Connected');
-        logger.info('Logged in as: ');
-        logger.info(bot.username + ' - (' + bot.id + ')');
+        logger.info(bot.user.username + ' - (' + bot.user.id + ')');
+
+        custom_emojis = bot.emojis;
     });
     
     //reply to messages
-    bot.on('message', function (username, userID, channelID, message, evt) {
-        if(username != bot.username) {
-            if (message.charAt(0) === '!'){
-                command = message.substring(1);
-                handle(command, channelID);
-            }
-            else {
-                reply(message, channelID);
-            }
+    bot.on('message', function (discord_message) {
+        message = discord_message.content;
+
+        if(discord_message.author != bot.user) {
+            message = message.toLowerCase();
+            var words = message.split(" ");
+            words.forEach((word, idx) => {
+                //prefix '!' for special commands
+                if (word.charAt(0) === '!'){
+                    command = word.substring(1);
+                    handle(command, words[idx+1], channelID);
+                }
+
+                reply(word, discord_message.channel);
+            });
+            react(discord_message);
         }
     });
-    
-    function reply(message, channelID) {
-        var words = message.split(" ");
-            words.forEach(word => {
-                //lowercase and remove all non alpha chars
-                word = word.toLowerCase().replace(/[^a-z]/g, "");
-                let answer = replies.memes[word];
-                if (answer) {
-                    bot.sendMessage({
-                        to: channelID,
-                        message: answer
-                    });
-                }
-            });
+}
+
+function reply(word, channel) {
+    word = word.replace(/[^a-z]/g, "");
+
+    //gets value from corresponding key in ./memes/reply.json
+    let reply = replies.memes[word];
+    if (reply) {
+        channel.send(reply)
     }
-    
-    function handle(command, channelID) {
-        var answer
-        switch(command) {
-            case 'copypasta':
-                answer = utilities.getRandom(copypastas);
-                break;
-            case 'oraculo':
-                answer = utilities.getRandom(replies.oraculo);
-                break;
-            case 'play':
-                answer = utilities.getRandom(replies.cumbia);
-                break;
-    
-        }
-        if (answer) {
-            bot.sendMessage({
-                to: channelID,
-                message: answer
-            });
-        }
+}
+
+function handle(command, params, channel) {
+    var reply;
+
+    //special words preceded by !, can be anywhere in the sentence
+    switch(command) {
+        case 'copypasta':
+            reply = utilities.getRandom(copypastas);
+            break;
+        case 'oraculo':
+            reply = utilities.getRandom(replies.oraculo);
+            break;
+        case 'play':
+            reply = utilities.getRandom(replies.cumbia);
+            break;
+        case 'roll':
+            reply = utilities.roll(params);
+            break;
     }
-    
-    /*
-    falta
-    !xd
-    */
+    if (reply) {
+        channel.send(reply);
+    }
+}
+function react(discord_message) {
+    message = discord_message.content.toLowerCase();
+    if (message.includes('jaja')) {
+        discord_message.react(custom_emojis.get("435297735919403008"));
+    }
 }
