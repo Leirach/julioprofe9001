@@ -1,8 +1,13 @@
 var fs = require('fs');
+var config = require('./config.json');
+
 exports.loadCopypastas = function() {
-    copypasta = fs.readFileSync('copypasta.txt').toString().split("\n");
-    redditpasta = fs.readFileSync('redditpasta.txt').toString().split("\n\n");
-    copypasta = copypasta.concat(redditpasta);
+    var copypasta = [];
+    config.cp_files.forEach(file => {
+        temp = fs.readFileSync(`./memes/${file}`).toString().split("\n\n");
+        copypasta = copypasta.concat(temp);
+    });
+
     return copypasta;
 }
 
