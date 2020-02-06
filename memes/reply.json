@@ -10,9 +10,8 @@
         "fuck you": "no u",
         "autism": "what",
         "lit": ":fire::weary::ok_hand:",
-        "raid": "shadow legends",
+        "raid": "RAID: Shadow Legends",
         "dab": "dab",
-        "lmao": "<:LMAO:435297735919403008>",
         "f": "F",
         "chocoroll": "69"
     },
@@ -45,6 +44,17 @@
         "UUEUADUDUWADUWA",
         "Now Playing♪\n\nCumbia Poder\n\no-----------------------------\n\n00:06 / 05:01\n\nRequested by: Sero4",
         "SANESS, YOU WANNA HAVE A BAD TOM???"
+    ],
+    "reactions": [
+        {
+            "emoji": "435297735919403008",
+            "triggers": [
+                "jaja",
+                "xd",
+                "lmao"
+            ],
+            "guild_emoji": true
+        }
     ]
 }
 

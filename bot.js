@@ -4,17 +4,9 @@ var replies = require('./memes/reply.json');
 var utilities = require('./utilities');
 
 var copypastas = utilities.loadCopypastas();
-var custom_emojis;
 
 //connect bot
 exports.init = function(bot) {
-    bot.on('ready', function (evt) {
-        logger.info('Connected');
-        logger.info(bot.user.username + ' - (' + bot.user.id + ')');
-
-        custom_emojis = bot.emojis;
-    });
-    
     //reply to messages
     bot.on('message', function (discord_message) {
         message = discord_message.content;
@@ -26,7 +18,7 @@ exports.init = function(bot) {
                 //prefix '!' for special commands
                 if (word.charAt(0) === '!'){
                     command = word.substring(1);
-                    handle(command, words[idx+1], channelID);
+                    handle(command, words[idx+1], discord_message.channel);
                 }
 
                 reply(word, discord_message.channel);
@@ -58,7 +50,10 @@ function handle(command, params, channel) {
             reply = utilities.getRandom(replies.oraculo);
             break;
         case 'play':
-            reply = utilities.getRandom(replies.cumbia);
+            if (utilities.randBool(.2)){
+                reply = utilities.getRandom(replies.cumbia);
+                //sendMusicMeme(channel);
+            }
             break;
         case 'roll':
             reply = utilities.roll(params);
@@ -68,9 +63,29 @@ function handle(command, params, channel) {
         channel.send(reply);
     }
 }
+
 function react(discord_message) {
     message = discord_message.content.toLowerCase();
-    if (message.includes('jaja')) {
-        discord_message.react(custom_emojis.get("435297735919403008"));
-    }
+
+    replies.reactions.forEach(reaction => {
+        reaction.triggers.forEach(trigger => {
+            if (message.includes(trigger)) {
+                if (reaction.guild_emoji){
+                    discord_message.react(bot.emojis.get(reaction.emoji));
+                }
+                else {
+                    discord_message.react(reaction.emoji);
+                }
+            }
+        });
+    });
+}
+
+function sendMusicMeme(channel){
+    const exampleEmbed = new Discord.RichEmbed()
+        .setAuthor('Now Playing♪', 'https://images-ext-2.discordapp.net/external/2fG56UtfyTSowWQ6HhhPIV9VrZoD_OcVdHVwWpu6rIY/https/rythmbot.co/rythm.gif','https://chtm.joto')
+        .setDescription("Cumbia Poder\n\n▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬🔘▬▬▬▬▬▬▬▬\n\n04:20/05:69\n\nRequested by: Sero4")
+        .setThumbnail('https://is4-ssl.mzstatic.com/image/thumb/Music/v4/46/aa/43/46aa4332-829b-84e6-9605-c6e183f6ca36/source/1200x1200bb.jpg')
+
+    channel.send(exampleEmbed);
 }

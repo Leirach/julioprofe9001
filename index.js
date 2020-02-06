@@ -14,4 +14,9 @@ logger.level = 'debug';
 bot = new Discord.Client();
 bot.login(auth.token);
 
+bot.on('ready', function (evt) {
+    logger.info('Connected');
+    logger.info(bot.user.username + ' - (' + bot.user.id + ')');
+});
+
 bot_js.init(bot);
