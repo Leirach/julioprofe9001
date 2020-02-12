@@ -5,27 +5,24 @@ var utilities = require('./utilities');
 
 var copypastas = utilities.loadCopypastas();
 
-//connect bot
-exports.init = function(bot) {
+exports.replyTo = (discord_message) => {
     //reply to messages
-    bot.on('message', function (discord_message) {
-        message = discord_message.content;
+    message = discord_message.content;
 
-        if(discord_message.author != bot.user) {
-            message = message.toLowerCase();
-            var words = message.split(" ");
-            words.forEach((word, idx) => {
-                //prefix '!' for special commands
-                if (word.charAt(0) === '!'){
-                    command = word.substring(1);
-                    handle(command, words[idx+1], discord_message.channel);
-                }
+    if(discord_message.author != bot.user) {
+        message = message.toLowerCase();
+        var words = message.split(" ");
+        words.forEach((word, idx) => {
+            //prefix '!' for special commands
+            if (word.charAt(0) === '!'){
+                command = word.substring(1);
+                handle(command, words[idx+1], discord_message.channel);
+            }
 
-                reply(word, discord_message.channel);
-            });
-            react(discord_message);
-        }
-    });
+            reply(word, discord_message.channel);
+        });
+        react(discord_message);
+    }
 }
 
 function reply(word, channel) {
@@ -52,7 +49,9 @@ function handle(command, params, channel) {
         case 'play':
             if (utilities.randBool(.2)){
                 reply = utilities.getRandom(replies.cumbia);
-                //sendMusicMeme(channel);
+            }
+            else if (utilities.randBool(.2)){
+                sendMusicMeme(channel);
             }
             break;
         case 'roll':

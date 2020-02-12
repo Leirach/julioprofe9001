@@ -2,7 +2,13 @@ var fs = require('fs');
 var config = require('./config.json');
 var d20 = require('d20');
 
-exports.loadCopypastas = function() {
+/**
+ * Loads copypastas from the files declared in config.json cp_files array, and 
+ * concats them in a single array.
+ * Copypastas must be separated by a single newline within the same file.
+ */
+//TO-DO: receive cp_files string from config from outside
+exports.loadCopypastas = () => {
     var copypasta = [];
     config.cp_files.forEach(file => {
         temp = fs.readFileSync(`./memes/${file}`).toString().split("\n\n");
@@ -12,13 +18,20 @@ exports.loadCopypastas = function() {
     return copypasta;
 }
 
-exports.getRandom = function(arr) {
+/**
+ * Returns a random element from given array.
+ * @param {array} arr 
+ */
+exports.getRandom = (arr) => {
     var idx = Math.floor(Math.random() * arr.length);
     return arr[idx];
 }
 
-// probability must be between 1-0
-exports.randBool = function(probability) {
+/**
+ * Given probabilty % in decimal number, has that chance of returning true.
+ * @param {float} probability must be between 0 and 1
+ */
+exports.randBool = (probability) => {
     if (probability <= 1 && probability >=0) {
         return Math.random() <= probability;
     }
@@ -28,7 +41,11 @@ exports.randBool = function(probability) {
     }
 }
 
-exports.roll = function(params) {
+/**
+ * Returns a number based on the roll string, or corresponding instructions.
+ * @param {string} params roll function string
+ */
+exports.roll = (params) => {
     if (params) {
        return d20.roll(params);
     }

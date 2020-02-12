@@ -14,9 +14,11 @@ logger.level = 'debug';
 bot = new Discord.Client();
 bot.login(auth.token);
 
-bot.on('ready', function (evt) {
+bot.on('ready', (evt) => {
     logger.info('Connected');
     logger.info(bot.user.username + ' - (' + bot.user.id + ')');
 });
 
-bot_js.init(bot);
+bot.on('message', (discord_message) => {
+    bot_js.replyTo(discord_message);
+});
