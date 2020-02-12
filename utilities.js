@@ -53,3 +53,8 @@ exports.roll = (params) => {
         return "Usage: !roll (dice)"
     }
 }
+
+exports.sleep = (sec) => {
+    return new Promise(resolve => setTimeout(resolve, sec*1000));
+  }
+  
