@@ -1,10 +1,13 @@
 var Discord = require('discord.js');
-var { token } = require('./auth.json');
+//var { token } = require('./auth.json');
 var bot_js = require('./bot');
+var dotenv = require('dotenv');
 
+dotenv.config();
 //init bot
 bot = new Discord.Client();
-authToken = token || process.env.TOKEN;
+authToken = process.env.TOKEN;
+
 
 if(!authToken){
     console.log("Bot authentication token not found!");
@@ -12,7 +15,7 @@ if(!authToken){
     return 1;
 }
 
-bot.login(token);
+bot.login(authToken);
 
 bot.on('ready', (evt) => {
     console.log('Connected!');
