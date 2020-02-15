@@ -1,8 +1,9 @@
 var Discord = require('discord.js');
 var replies = require('./memes/reply.json');
 var utilities = require('./utilities');
+var config = require('./config.json');
 
-var copypastas = utilities.loadCopypastas();
+var copypastas = utilities.loadCopypastas(config.cp_files);
 
 exports.replyTo = (discord_message) => {
     //reply to messages
@@ -93,23 +94,24 @@ function sendMusicMeme(channel){
 
 async function castigar(discord_message, params) {
     const user = discord_message.mentions.users.first()
-    if (user) {
-        member = discord_message.guild.member(user);
-        vc = member.voiceChannel;
-        if (vc && vc.id != '420073984579731468') {
-            await member.setVoiceChannel('420073984579731468');
-            discord_message.channel.send("Castigado, papu");
-            await utilities.sleep(30);
-            if(member.voiceChannel.id == '420073984579731468') {
-                await member.setVoiceChannel(vc);
-                discord_message.channel.send("Descastigado, papu");
-            }
-        }
-        else {
-            discord_message.reply("No esté chingando");
+    if (!user){
+        discord_message.reply("Usage: !castigar @wey");
+        return ;
+    }
+    member = discord_message.guild.member(user);
+    vc = member.voiceChannel;
+    //if member is in voice channel and its not purgatory, send him to the ranch
+    if (vc && vc.id != config.purgatoryChannel) {
+        await member.setVoiceChannel(config.purgatoryChannel);
+        discord_message.channel.send("Castigado, papu");
+        await utilities.sleep(30);
+        //if member hasn't left the purgatory send him back tohis original vc
+        if(member.voiceChannel.id == config.purgatoryChannel) {
+            await member.setVoiceChannel(vc);
+            discord_message.channel.send("Descastigado, papu");
         }
     }
     else {
-        discord_message.reply("Usage: !castigar @wey");
+        discord_message.reply("No esté chingando");
     }
 }

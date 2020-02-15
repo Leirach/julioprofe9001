@@ -1,5 +1,4 @@
 var fs = require('fs');
-var config = require('./config.json');
 var d20 = require('d20');
 
 /**
@@ -7,10 +6,9 @@ var d20 = require('d20');
  * concats them in a single array.
  * Copypastas must be separated by a single newline within the same file.
  */
-//TO-DO: receive cp_files string from config from outside
-exports.loadCopypastas = () => {
+exports.loadCopypastas = (cp_files) => {
     var copypasta = [];
-    config.cp_files.forEach(file => {
+    cp_files.forEach(file => {
         temp = fs.readFileSync(`./memes/${file}`).toString().split("\n\n");
         copypasta = copypasta.concat(temp);
     });
@@ -54,6 +52,10 @@ exports.roll = (params) => {
     }
 }
 
+/**
+ * Sets a timer for secs sent.
+ * @param {sec} params time in seconds to sleep
+ */
 exports.sleep = (sec) => {
     return new Promise(resolve => setTimeout(resolve, sec*1000));
   }
