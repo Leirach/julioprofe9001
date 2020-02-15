@@ -1,13 +1,26 @@
 var Discord = require('discord.js');
-//var { token } = require('./auth.json');
 var bot_js = require('./bot');
 var dotenv = require('dotenv');
+const http = require('http');
+const express = require('express');
 
+const app = express();
 dotenv.config();
+
+//ping self
+let port = process.env.PORT || 8080;
+let url;
+if (process.env.PROJECT_DOMAIN) {
+    url = `http://${process.env.PROJECT_DOMAIN}.glitch.me/`;
+} else {
+    url = `http://localhost:8080`;
+}
+app.listen(port);
+setInterval(() => { http.get(url); }, 298000);
+
 //init bot
 bot = new Discord.Client();
 authToken = process.env.TOKEN;
-
 
 if(!authToken){
     console.log("Bot authentication token not found!");
