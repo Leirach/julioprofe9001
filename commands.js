@@ -53,29 +53,57 @@ async function roll(discord_message, args) {
      }
 }
 
+/**
+ * SPAGHETTI CODE WARNING
+ * NEED TO REDO ASAP
+ * @param {message} discord_message 
+ * @param {[String]} args 
+ */
 async function castigar(discord_message, args) {
-    const user = discord_message.mentions.users.first();
+    const users = discord_message.mentions.users.array();
+    let members = [];
+    let vc;
+    let sentBack = 0;
 
-    if (!user){ return "Usage: !castigar @wey"; }
-
-    let member = discord_message.guild.member(user);
-    let vc = member.voiceChannel;
+    if (!users) { return "Usage: !castigar @wey"; }
+    if (!discord_message.guild) { return "Aqui no uei"; }
+    users.forEach(user => {
+        members.push(discord_message.guild.member(user));
+    });
+    vc = members[0].voiceChannel;
 
     //if member is in voice channel and its not purgatory, send him to the ranch
     if (vc && vc.id != config.purgatoryChannel) {
-        castigados.push({"member": member, "vc":vc});
-        await member.setVoiceChannel(config.purgatoryChannel);
-        discord_message.channel.send("Castigado, papu");
+        castigados.push({"members": members, "vc":vc});
+        members.forEach(async (member) => {
+            await member.setVoiceChannel(config.purgatoryChannel);
+        });
 
-        await utilities.sleep(8);
+        if (members.length > 1){
+            discord_message.channel.send("Castigados, papu");
+        }
+        else {
+            discord_message.channel.send("Castigado, papu");
+        }
+        
+        await utilities.sleep(30);
 
-        //if member hasn't left the purgatory send him back tohis original vc
+        //if member hasn't left the purgatory send him back to his original vc
         aux = castigados.shift();
-        if(aux.member.voiceChannel.id == config.purgatoryChannel) {
-            await aux.member.setVoiceChannel(aux.vc);
-            return "Descastigado, papu";
+        aux.members.forEach(async (member) => {
+            if(member.voiceChannel.id == config.purgatoryChannel) {
+                await member.setVoiceChannel(aux.vc);
+                sentBack += 1
+            }
+        });
+        if (sentBack > 1){
+            discord_message.channel.send("Descastigados, papu");
+        }
+        else {
+            discord_message.channel.send("Descastigado, papu");
         }
         return null;
+        
     }
     else {
         return "No esté chingando";
