@@ -16,6 +16,7 @@ if (process.env.PROJECT_DOMAIN) {
     url = `http://localhost:8080`;
 }
 app.listen(port);
+app.use(express.static('client'));
 setInterval(() => { http.get(url); }, 295000);
 
 //init bot
