@@ -16,7 +16,7 @@ if (process.env.PROJECT_DOMAIN) {
     url = `http://localhost:8080`;
 }
 app.listen(port);
-setInterval(() => { http.get(url); }, 298000);
+setInterval(() => { http.get(url); }, 295000);
 
 //init bot
 bot = new Discord.Client();
