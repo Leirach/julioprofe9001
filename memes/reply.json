@@ -2,19 +2,19 @@
     "memes": {
         "ayy": "lmao",
         "julio": "Aguacaaaate",
-        "spank me daddy": "Oh yeah Mr Krabs",
         "normies": "Reeeeeeee",
         "kahoot": "yayaya",
         "UVM": "No está jodida",
         "fu" : "no u",
-        "fuck you": "no u",
         "autism": "what",
         "lit": ":fire::weary::ok_hand:",
         "raid": "RAID: Shadow Legends",
         "dab": "dab",
         "f": "F",
         "chocoroll": "69",
-        "nightmare": "NIGHTMARE NIGHTMARE NIGHTMARE"
+        "nightmare": "NIGHTMARE NIGHTMARE NIGHTMARE",
+        "furro": "OwO",
+        "furry": "OwO"
     },
     "oraculo": [
         "nah, estás pendejo",
@@ -22,8 +22,8 @@
         "sí",
         "nah",
         "sí, a menos que seas Ro, entonces no",
+        "no, a menis que seas Ro, entonces sí",
         "smn",
-        "walter",
         "a ver dejame lo pienso... no",
         "a ver dejame lo pienso... sí",
         "nah, chinga tu madre",
@@ -38,7 +38,9 @@
         "pito galactico",
         "esa parece una pregunta para el mago anal",
         "ahuevo wey",
-        "no uwu"
+        "no uwu",
+        "sí uwu", 
+        "OwO"
     ],
     "cumbia": [
         "oi nomas ese cumbion",
@@ -54,6 +56,13 @@
                 "lmao"
             ],
             "guild_emoji": true
+        },
+        {
+            "emoji": "👌",
+            "triggers": [
+                "👌"
+            ],
+            "guild_emoji": false
         }
     ]
 }

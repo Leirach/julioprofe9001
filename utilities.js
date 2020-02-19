@@ -1,5 +1,4 @@
 var fs = require('fs');
-var d20 = require('d20');
 
 /**
  * Loads copypastas from the files declared in config.json cp_files array, and 
@@ -36,19 +35,6 @@ exports.randBool = (probability) => {
     else {
         console.log(`probability of: ${probability} not in range. returning false`)
         return false
-    }
-}
-
-/**
- * Returns a number based on the roll string, or corresponding instructions.
- * @param {string} params roll function string
- */
-exports.roll = (params) => {
-    if (params) {
-       return d20.roll(params);
-    }
-    else {
-        return "Usage: !roll (dice)"
     }
 }
 
