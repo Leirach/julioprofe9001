@@ -11,7 +11,12 @@ var replies = require('./memes/reply.json');
 var utilities = require('./utilities');
 
 var copypastas = utilities.loadCopypastas(config.cp_files);
+var castigados = [];
 
+/**
+ * Declare any new commands here for the bot to handle
+ * Then declare the function as an async function to return a promise
+ */
 exports.commands = {
     "copypasta": copypasta,
     "oraculo": oraculo,
@@ -20,12 +25,20 @@ exports.commands = {
     "castigar": castigar,
 }
 
-castigados = [];
-
+/**
+ * Returns a random copypasta to send
+ * @param {message} discord_message 
+ * @param {[String]} args 
+ */
 async function copypasta(discord_message, args) {
     return utilities.getRandom(copypastas);
 }
 
+/**
+ * 20% chance to send music meme or random reply from the "cumbia" array in replies.json
+ * @param {message} discord_message 
+ * @param {[String]} args 
+ */
 async function play(discord_message, args) {
     if (utilities.randBool(.2)){
         return utilities.getRandom(replies.cumbia);
@@ -40,10 +53,22 @@ async function play(discord_message, args) {
     return null;
 }
 
+/**
+ * Sends a random reply from the "oraculo" array in replies.json
+ * @param {message} discord_message 
+ * @param {[String]} args 
+ */
 async function oraculo(discord_message, args) {
     discord_message.reply( utilities.getRandom(replies.oraculo) );
+    return null;
 }
 
+/**
+ * Rolls the corresponding dice to the first argument
+ * See https://www.npmjs.com/package/d20 for more info
+ * @param {message} discord_message 
+ * @param {[String]} args 
+ */
 async function roll(discord_message, args) {
     if (args[0]) {
         return d20.roll(args[0]);
@@ -56,6 +81,9 @@ async function roll(discord_message, args) {
 /**
  * SPAGHETTI CODE WARNING
  * NEED TO REDO ASAP
+ * Sends people to the purgatory channel, can send multiple people if they are all
+ * mentioned in the same message. After 30 seconds returns them to their original
+ * voice channel.
  * @param {message} discord_message 
  * @param {[String]} args 
  */

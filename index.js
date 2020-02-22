@@ -17,7 +17,8 @@ if (process.env.PROJECT_DOMAIN) {
 }
 app.listen(port);
 app.use(express.static('client'));
-setInterval(() => { http.get(url); }, 295000);
+//Uptime Robot should keep it online.
+//setInterval(() => { http.get(url); }, 295000);
 
 //init bot
 bot = new Discord.Client();

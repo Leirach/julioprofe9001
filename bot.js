@@ -1,6 +1,5 @@
 var Discord = require('discord.js');
 var replies = require('./memes/reply.json');
-var utilities = require('./utilities');
 var { commands } = require('./commands');
 
 exports.replyTo = (discord_message) => {
@@ -25,6 +24,7 @@ exports.replyTo = (discord_message) => {
 }
 
 function reply(word, channel) {
+    //remove non-alpha chars
     word = word.replace(/[^a-z]/g, "");
 
     //gets value from corresponding key in ./memes/reply.json
