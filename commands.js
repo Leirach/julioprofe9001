@@ -23,6 +23,7 @@ exports.commands = {
     "play": play,
     "roll": roll,
     "castigar": castigar,
+    "playlist": playlist,
 }
 
 /**
@@ -136,4 +137,13 @@ async function castigar(discord_message, args) {
     else {
         return "No esté chingando";
     }
+}
+
+/**
+ * Sends link to playlist for rythm
+ * @param {message} discord_message also unused lmao
+ * @param {[String]} args unused
+ */
+async function playlist(discord_message, args) {
+    return "!play https://www.youtube.com/playlist?list=PLbdSztzy8c0asHbeMAuF8S7aBo0nO-VZM"
 }
