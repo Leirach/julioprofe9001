@@ -1,11 +1,14 @@
-{
-    "memes": {
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.reactions = exports.replies = void 0;
+exports.replies = {
+    memes: {
         "ayy": "lmao",
         "julio": "Aguacaaaate",
         "normies": "Reeeeeeee",
         "kahoot": "yayaya",
         "UVM": "No está jodida",
-        "fu" : "no u",
+        "fu": "no u",
         "autism": "what",
         "lit": ":fire::weary::ok_hand:",
         "raid": "RAID: Shadow Legends",
@@ -18,7 +21,7 @@
         "nigger": "That's racist you can't say the n-word!",
         "epic": "epic bad"
     },
-    "oraculo": [
+    oraculo: [
         "nah, estás pendejo",
         "va, pero eso no te quita lo joto",
         "sí",
@@ -41,31 +44,44 @@
         "esa parece una pregunta para el mago anal",
         "ahuevo wey",
         "no uwu",
-        "sí uwu", 
+        "sí uwu",
         "OwO"
     ],
-    "cumbia": [
+    cumbia: [
         "oi nomas ese cumbion",
         "UUEUADUDUWADUWA",
         "SANESS, YOU WANNA HAVE A BAD TOM???"
     ],
-    "reactions": [
+    reactions: [
         {
             "emoji": "435297735919403008",
             "triggers": [
                 "jaja",
                 "xd",
                 "lmao"
-            ],
-            "guild_emoji": true
+            ]
         },
         {
             "emoji": "👌",
             "triggers": [
                 "👌"
-            ],
-            "guild_emoji": false
+            ]
         }
     ]
-}
-
+};
+exports.reactions = [
+    {
+        "emoji": "435297735919403008",
+        "triggers": [
+            "jaja",
+            "xd",
+            "lmao"
+        ]
+    },
+    {
+        "emoji": "👌",
+        "triggers": [
+            "👌"
+        ]
+    }
+];
