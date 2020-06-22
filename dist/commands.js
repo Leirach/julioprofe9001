@@ -32,14 +32,15 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.commands = void 0;
-const discord_js_1 = require("discord.js");
 /**
  * Command functions for the bot, keywords for commands are preceded by '!'.
  * Any message that needs to be sent and is not a reply can must be returned by
  * the function. Embeds can be return as long as it can be sent via the
  * channel.send() function.
  */
+const discord_js_1 = require("discord.js");
 const d20_1 = __importDefault(require("d20"));
+;
 const config_json_1 = __importDefault(require("./config.json"));
 const replies_1 = require("./replies");
 const utilities = __importStar(require("./utilities"));
@@ -48,7 +49,7 @@ var castigados = [];
 exports.commands = {
     "copypasta": copypasta,
     "oraculo": oraculo,
-    "play": play,
+    "play": playMeme,
     "roll": roll,
     "castigar": castigar,
 };
@@ -67,7 +68,7 @@ function copypasta(discord_message, _args) {
  * @param discord_message
  * @param _args
  */
-function play(discord_message, _args) {
+function playMeme(discord_message, _args) {
     return __awaiter(this, void 0, void 0, function* () {
         if (utilities.randBool(.2)) {
             return utilities.getRandom(replies_1.replies.cumbia);
@@ -111,7 +112,6 @@ function roll(discord_message, args) {
 }
 /**
  * SPAGHETTI CODE WARNING
- * NEED TO REDO ASAP
  * Sends people to the purgatory channel, can send multiple people if they are all
  * mentioned in the same message. After 30 seconds returns them to their original
  * voice channel.

@@ -1,20 +1,19 @@
-import { Message, GuildMember, User, MessageEmbed } from "discord.js";
-
 /**
  * Command functions for the bot, keywords for commands are preceded by '!'.
  * Any message that needs to be sent and is not a reply can must be returned by
  * the function. Embeds can be return as long as it can be sent via the
  * channel.send() function.
  */
-import d20 from 'd20';
-import config from './config.json'
-import {replies} from './replies'
-import * as utilities from './utilities'
+import { Message, GuildMember, User, MessageEmbed } from "discord.js";
+import d20 from 'd20';;
+import config from './config.json';
+import {replies} from './replies';
+import * as utilities from './utilities';
+
+type member = GuildMember | null | undefined;
 
 var copypastas = utilities.loadCopypastas(config.cp_files);
 var castigados: any[] = [];
-
-type member = GuildMember | null | undefined;
 
 /**
  * Declare any new commands here for the bot to handle
@@ -24,7 +23,7 @@ type FunctionDictionary = { [key: string]: Function };
 export let commands: FunctionDictionary = {
     "copypasta": copypasta,
     "oraculo": oraculo,
-    "play": play,
+    "play": playMeme,
     "roll": roll,
     "castigar": castigar,
 }
@@ -43,7 +42,7 @@ async function copypasta(discord_message: Message, _args: string[]) {
  * @param discord_message 
  * @param _args 
  */
-async function play(discord_message: Message, _args: string[]) {
+async function playMeme(discord_message: Message, _args: string[]) {
     if (utilities.randBool(.2)){
         return utilities.getRandom(replies.cumbia);
     }
@@ -84,7 +83,6 @@ async function roll(discord_message: Message, args: string[]) {
 
 /**
  * SPAGHETTI CODE WARNING
- * NEED TO REDO ASAP
  * Sends people to the purgatory channel, can send multiple people if they are all
  * mentioned in the same message. After 30 seconds returns them to their original
  * voice channel.

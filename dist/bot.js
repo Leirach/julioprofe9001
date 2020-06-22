@@ -8,11 +8,16 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.initBot = void 0;
 const discord_js_1 = require("discord.js");
 const replies_1 = require("./replies");
 const commands_1 = require("./commands");
+const music_1 = require("./music");
+const config_json_1 = __importDefault(require("./config.json"));
 let bot;
 function replyTo(discord_message) {
     var _a;
@@ -25,9 +30,13 @@ function replyTo(discord_message) {
     var words = message.split(" ");
     words.forEach((word, idx) => {
         //prefix '!' for special commands
-        if (word.charAt(0) === '!') {
+        if (word.charAt(0) === config_json_1.default.prefix) {
             const command = word.substring(1);
             handle(command, words.slice(idx + 1), discord_message);
+        }
+        else if (word.charAt(0) === config_json_1.default.musicPrefix) {
+            const command = word.substring(1);
+            djJulio(command, words.slice(idx + 1), discord_message);
         }
         respond(word, discord_message.channel);
     });
@@ -49,6 +58,16 @@ function handle(command, args, discord_message) {
         //in commands.js
         if (commands_1.commands[command]) {
             let message = yield commands_1.commands[command](discord_message, args);
+            if (message) {
+                discord_message.channel.send(message);
+            }
+        }
+    });
+}
+function djJulio(command, args, discord_message) {
+    return __awaiter(this, void 0, void 0, function* () {
+        if (music_1.musicCommands[command]) {
+            let message = yield music_1.musicCommands[command](discord_message, args);
             if (message) {
                 discord_message.channel.send(message);
             }

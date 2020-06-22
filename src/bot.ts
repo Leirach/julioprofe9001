@@ -1,6 +1,8 @@
 import { Message, Client, Channel, TextChannel, DMChannel, NewsChannel } from "discord.js";
 import { replies, reactions } from './replies';
 import { commands } from './commands';
+import { musicCommands } from './music'
+import config from './config.json'
 
 type TextChannels = DMChannel | TextChannel | NewsChannel;
 
@@ -17,9 +19,13 @@ function replyTo (discord_message: Message) {
     var words = message.split(" ");
     words.forEach((word, idx) => {
         //prefix '!' for special commands
-        if (word.charAt(0) === '!'){
+        if (word.charAt(0) === config.prefix){
             const command = word.substring(1);
             handle(command, words.slice(idx+1), discord_message);
+        }
+        else if (word.charAt(0) === config.musicPrefix){
+            const command = word.substring(1);
+            djJulio(command, words.slice(idx+1), discord_message);
         }
 
         respond(word, discord_message.channel);
@@ -44,6 +50,15 @@ async function handle(command: string, args: string[], discord_message: Message)
     //in commands.js
     if (commands[command]){
         let message = await commands[command](discord_message, args)
+        if (message) {
+            discord_message.channel.send(message);
+        }
+    }
+}
+
+async function djJulio(command: string, args: string[], discord_message: Message) {
+    if (musicCommands[command]){
+        let message = await musicCommands[command](discord_message, args)
         if (message) {
             discord_message.channel.send(message);
         }
