@@ -16,7 +16,7 @@ exports.initBot = void 0;
 const discord_js_1 = require("discord.js");
 const replies_1 = require("./replies");
 const commands_1 = require("./commands");
-const music_1 = require("./music");
+const music_1 = require("./DJ/music");
 const config_json_1 = __importDefault(require("./config.json"));
 let bot;
 function replyTo(discord_message) {

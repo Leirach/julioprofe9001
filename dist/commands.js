@@ -74,13 +74,11 @@ function playMeme(discord_message, _args) {
             return utilities.getRandom(replies_1.replies.cumbia);
         }
         else if (utilities.randBool(.2)) {
-            const exampleEmbed = new discord_js_1.MessageEmbed()
+            return new discord_js_1.MessageEmbed()
                 .setAuthor('Now Playing♪', 'https://images-ext-2.discordapp.net/external/2fG56UtfyTSowWQ6HhhPIV9VrZoD_OcVdHVwWpu6rIY/https/rythmbot.co/rythm.gif', 'https://chtm.joto')
                 .setDescription("Cumbia Poder\n\n▬▬▬▬▬▬▬▬▬▬▬▬▬🔘▬▬▬▬▬▬\n\n04:20/05:69\n\nRequested by: Sero4")
                 .setThumbnail('https://is4-ssl.mzstatic.com/image/thumb/Music/v4/46/aa/43/46aa4332-829b-84e6-9605-c6e183f6ca36/source/1200x1200bb.jpg');
-            discord_message.channel.send(exampleEmbed);
         }
-        return null;
     });
 }
 /**
@@ -91,7 +89,6 @@ function playMeme(discord_message, _args) {
 function oraculo(discord_message, _args) {
     return __awaiter(this, void 0, void 0, function* () {
         discord_message.reply(utilities.getRandom(replies_1.replies.oraculo));
-        return null;
     });
 }
 /**

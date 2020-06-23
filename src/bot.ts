@@ -1,7 +1,7 @@
 import { Message, Client, Channel, TextChannel, DMChannel, NewsChannel } from "discord.js";
 import { replies, reactions } from './replies';
 import { commands } from './commands';
-import { musicCommands } from './music'
+import { musicCommands } from './DJ/music'
 import config from './config.json'
 
 type TextChannels = DMChannel | TextChannel | NewsChannel;

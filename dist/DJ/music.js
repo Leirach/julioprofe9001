@@ -19,6 +19,8 @@ const ytdl_core_1 = __importDefault(require("ytdl-core"));
 let globalQueues = new discord_js_1.Collection();
 exports.musicCommands = {
     "play": play,
+    "queue": queue,
+    "skip": skip,
 };
 /**
  * Plays music?
@@ -27,22 +29,20 @@ exports.musicCommands = {
  */
 function play(discord_message, _args) {
     return __awaiter(this, void 0, void 0, function* () {
-        const args = discord_message.content.split(" ");
         const voiceChannel = discord_message.member.voice.channel;
+        let url = discord_message.content.split(' ')[1];
         if (!voiceChannel)
             return "You need to be in a voice channel to play music!";
         const permissions = voiceChannel.permissionsFor("312665173053931520");
         if (!permissions.has("CONNECT") || !permissions.has("SPEAK")) {
             return "I need the permissions to join and speak in your voice channel!";
         }
-        let song = {
-            title: "",
-            url: ""
-        };
+        let song;
         try {
-            let songInfo = yield ytdl_core_1.default.getInfo(args[1]);
-            song.title = songInfo.title;
-            song.url = songInfo.video_url;
+            console.log(url);
+            let songInfo = yield ytdl_core_1.default.getInfo(url);
+            songInfo.length_seconds;
+            song = new musicClasses_1.Song(songInfo.title, url, songInfo.length_seconds);
         }
         catch (err) {
             return "No mames, eso no es un link";
@@ -62,7 +62,7 @@ function play(discord_message, _args) {
             // Here we try to join the voicechat and save our connection into our object.
             var connection = yield voiceChannel.join();
             queue.connection = connection;
-            // Calling the play function to start a song
+            // Calling the playSong function to start a song
             playSong(discord_message.guild, queue.songs[0]);
         }
         catch (err) {
@@ -85,7 +85,34 @@ function playSong(guild, song) {
         serverQueue.songs.shift();
         playSong(guild, serverQueue.songs[0]);
     })
-        .on("error", (error) => console.error(error));
+        .on("error", (error) => {
+        console.error(error);
+    });
     dispatcher.setVolumeLogarithmic(serverQueue.volume / 5);
-    serverQueue.textChannel.send(`Start playing: **${song.title}**`);
+    //serverQueue.textChannel.send(`Start playing: **${song.title}**`);
+}
+function queue(discord_message, _args) {
+    var _a;
+    return __awaiter(this, void 0, void 0, function* () {
+        const serverQueue = globalQueues.get((_a = discord_message.guild) === null || _a === void 0 ? void 0 : _a.id);
+        if (!serverQueue || !serverQueue.songs) {
+            return "No hay ni madres aqui";
+        }
+        const next10 = serverQueue.songs.slice(0, 11);
+        let msg = `Now playing: ${next10[0]}\nUp Next:\n`;
+        next10.forEach((song, idx) => {
+            if (idx > 0) {
+                msg.concat(`${idx}: ${song.title}\n`);
+            }
+        });
+        return msg;
+    });
+}
+function skip(discord_message, _args) {
+    const serverQueue = globalQueues.get(discord_message.guild.id);
+    if (!discord_message.member.voice.channel)
+        return "No mames, ni la estás oyendo";
+    if (!serverQueue)
+        return "No hay ni madres en la cola";
+    serverQueue.connection.dispatcher.end();
 }
