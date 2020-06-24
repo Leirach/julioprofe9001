@@ -12,24 +12,21 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getSongs = exports.songFromURL = exports.searchYT = exports.getPlaylist = void 0;
+exports.parseArgument = exports.songFromURL = exports.searchYT = exports.getPlaylist = void 0;
 const googleapis_1 = require("googleapis");
 const ytdl_core_1 = __importDefault(require("ytdl-core"));
 const musicClasses_1 = require("./musicClasses");
 const youtube = googleapis_1.google.youtube('v3');
 const apiKey = process.env.YT_API_KEY;
-console.log(apiKey);
 const prependURL = 'https://www.youtube.com/watch?v=';
 function getPlaylist(playlist, nextPageToken) {
     return __awaiter(this, void 0, void 0, function* () {
-        console.log(nextPageToken);
         // check pagination for really long playlists
         if (!nextPageToken)
             return Array();
         if (nextPageToken == 'first')
             nextPageToken = null;
         // get video IDs from playlist
-        console.log("getting playlist");
         let res = yield youtube.playlistItems.list({
             key: apiKey,
             part: ['snippet'],
@@ -37,26 +34,19 @@ function getPlaylist(playlist, nextPageToken) {
             pageToken: nextPageToken,
             maxResults: 50,
         });
-        console.log("got playlist");
         // map the ids to an array and then request the video info
         // 50 at a time to reduce api quota usage
-        console.log("getting song ids");
         let videoIds = res.data.items.map(item => {
             return item.snippet.resourceId.videoId;
         });
-        console.log("done getting ids");
-        console.log("getting video info for 50 vids");
         let videoInfo = yield youtube.videos.list({
             key: apiKey,
             part: ['snippet', 'contentDetails'],
             id: videoIds,
         });
-        console.log("done getting");
-        console.log("mapping to songs");
         let songs = videoInfo.data.items.map(item => {
             return new musicClasses_1.Song(item.snippet.title, prependURL + item.id, item.contentDetails.duration);
         });
-        console.log("done mapping");
         return songs.concat(yield getPlaylist(playlist, res.data.nextPageToken));
     });
 }
@@ -97,14 +87,8 @@ function songFromURL(url) {
     });
 }
 exports.songFromURL = songFromURL;
-function getSongs(url) {
+function parseArgument() {
     return __awaiter(this, void 0, void 0, function* () {
-        if (url.includes('/playlist?list=')) {
-            let playlistId = url.split('/playlist?list=')[1];
-            playlistId = playlistId.split('&')[0];
-            return getPlaylist(playlistId, "first");
-        }
-        return songFromURL(url);
     });
 }
-exports.getSongs = getSongs;
+exports.parseArgument = parseArgument;

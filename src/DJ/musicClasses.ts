@@ -12,7 +12,7 @@ export class Song {
     }
 }
 
-export class QueueContruct {
+export class QueueContract {
     textChannel: TextChannel | DMChannel | NewsChannel;
     voiceChannel: VoiceChannel;
     connection: VoiceConnection| null;
@@ -31,4 +31,4 @@ export class QueueContruct {
 }
 
 // no jala esto por alguna razon
-export type GlobalQueue = Collection<string, QueueContruct>;
+export type GlobalQueue = Collection<string, QueueContract>;

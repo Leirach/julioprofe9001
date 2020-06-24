@@ -26,6 +26,12 @@ function replyTo(discord_message) {
     }
     //reply to messages
     let message = discord_message.content;
+    if (discord_message.content.startsWith(config_json_1.default.musicPrefix)) {
+        var words = message.split(" ");
+        const command = words[0].substring(1);
+        djJulio(command, words.slice(1), discord_message);
+        return;
+    }
     message = message.toLowerCase();
     var words = message.split(" ");
     words.forEach((word, idx) => {
@@ -33,10 +39,6 @@ function replyTo(discord_message) {
         if (word.charAt(0) === config_json_1.default.prefix) {
             const command = word.substring(1);
             handle(command, words.slice(idx + 1), discord_message);
-        }
-        else if (word.charAt(0) === config_json_1.default.musicPrefix) {
-            const command = word.substring(1);
-            djJulio(command, words.slice(idx + 1), discord_message);
         }
         respond(word, discord_message.channel);
     });

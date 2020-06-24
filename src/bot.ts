@@ -15,6 +15,13 @@ function replyTo (discord_message: Message) {
     //reply to messages
     let message = discord_message.content;
 
+    if (discord_message.content.startsWith(config.musicPrefix)) {
+        var words = message.split(" ");
+        const command = words[0].substring(1);
+        djJulio(command, words.slice(1), discord_message);
+        return ;
+    }
+
     message = message.toLowerCase();
     var words = message.split(" ");
     words.forEach((word, idx) => {
@@ -22,10 +29,6 @@ function replyTo (discord_message: Message) {
         if (word.charAt(0) === config.prefix){
             const command = word.substring(1);
             handle(command, words.slice(idx+1), discord_message);
-        }
-        else if (word.charAt(0) === config.musicPrefix){
-            const command = word.substring(1);
-            djJulio(command, words.slice(idx+1), discord_message);
         }
 
         respond(word, discord_message.channel);

@@ -1,60 +1,70 @@
 import { Message, Collection, Guild } from "discord.js";
-import { QueueContruct, Song } from './musicClasses';
 import ytdl from 'ytdl-core';
+import { QueueContract, Song } from './musicClasses';
+import * as ytUitls from './youtubeUtils';
+import { isURL } from "../utilities";
 
-let globalQueues = new Collection<string, QueueContruct>();
+let globalQueues = new Collection<string, QueueContract>();
 
 type FunctionDictionary = { [key: string]: Function };
 export let musicCommands: FunctionDictionary = {
     "play": play,
     "queue": queue,
     "skip": skip,
+    "stop": stop,
+    "dc": stop,
 }
 
 /**
  * Plays music?
  * @param discord_message 
- * @param _args 
+ * @param args 
  */
-async function play(discord_message: Message, _args: string[]) {
+async function play(discord_message: Message, args: string[]) {
     const voiceChannel = discord_message.member.voice.channel;
-    let url = discord_message.content.split(' ')[1];
     if (!voiceChannel)
-        return "You need to be in a voice channel to play music!"
+        return "No estás conectado en vc";
     const permissions = voiceChannel.permissionsFor("312665173053931520");
     if (!permissions.has("CONNECT") || !permissions.has("SPEAK")) {
-        return "I need the permissions to join and speak in your voice channel!"
-    }
-    let song: Song;
-    try {
-        console.log(url);
-        let songInfo = await ytdl.getInfo(url);
-        songInfo.length_seconds
-        song = new Song(songInfo.title, url, songInfo.length_seconds);
-    } catch (err) {
-        return "No mames, eso no es un link";
+        return "Necesito permisos para conectar en ese canal";
     }
 
+    // tries to parse url
+    let result;
+    if ( isURL(args[0]) ) {
+        result = await ytUitls.getSongs(args[0]);
+        console.log(result);
+    }
+    else {
+        result = await ytUitls.searchYT(args[0])
+    }
+
+    //if a queueContract already exists (bot is already playing a song)
+    // push a song in the array and return confirmation message
     let serverQueue = globalQueues.get(discord_message.guild.id);
-    if (serverQueue) {
-        serverQueue.songs.push(song);
-        console.log(serverQueue.songs);
-        return `${song.title} agregado a la playlist`;
+    if (serverQueue){
+        // if its a song push it, otherwise concat the whole fucking array
+        if (result instanceof Song){
+            serverQueue.songs.push(result);
+            return `**${result.title}** agregado a la playlist`;
+        }
+        else {
+            serverQueue.songs.concat(result);
+            return `Agregads un chingo de canciones`;
+        }
+        
     }
 
-    let queue = new QueueContruct(discord_message, voiceChannel);
-
-    // Setting the queue using our contract
-    globalQueues.set(discord_message.guild.id, queue);
-    // Pushing the song to our songs array
-    queue.songs.push(song);
-
+    // Otherwise create new contract and start playing music boi
+    serverQueue = new QueueContract(discord_message, voiceChannel);
+    globalQueues.set(discord_message.guild.id, serverQueue);
+    if (result instanceof Song)
+            serverQueue.songs.push(result);
+        else 
+            serverQueue.songs.concat(result);
     try {
-        // Here we try to join the voicechat and save our connection into our object.
-        var connection = await voiceChannel.join();
-        queue.connection = connection;
-        // Calling the playSong function to start a song
-        playSong(discord_message.guild, queue.songs[0]);
+        serverQueue.connection = await voiceChannel.join();
+        playSong(discord_message.guild, serverQueue.songs[0]);
     } catch (err) {
         console.log(err);
         globalQueues.delete(discord_message.guild.id);
@@ -101,9 +111,37 @@ async function queue(discord_message: Message, _args: string[]) {
 
 function skip(discord_message: Message, _args: string[]) {
     const serverQueue = globalQueues.get(discord_message.guild.id);
+    if (!serverQueue)
+        return "Ni estoy tocando música";
     if (!discord_message.member.voice.channel)
         return "No mames, ni la estás oyendo";
-    if (!serverQueue)
-        return "No hay ni madres en la cola";
     serverQueue.connection.dispatcher.end();
+}
+
+function stop(discord_message: Message, _args: string[]) {
+    const serverQueue = globalQueues.get(discord_message.guild.id);
+    if (!serverQueue)
+        return "Ni estoy tocando música";
+    if (!discord_message.member.voice.channel)
+        return "No mames, ni la estás oyendo";
+    serverQueue.songs = [];
+    serverQueue.connection.dispatcher.end();
+}
+
+function playtop(discord_message: Message, _args: string[]) {
+    const serverQueue = globalQueues.get(discord_message.guild.id);
+    if (!serverQueue)
+        return play(discord_message, _args);
+}
+
+function playskip(discord_message: Message, _args: string[]) {
+    const serverQueue = globalQueues.get(discord_message.guild.id);
+    if (!serverQueue)
+        return play(discord_message, _args);
+    //serverQueue.songs.splice(1, 0, item);
+    serverQueue.connection.dispatcher.end();
+}
+
+function shuffle(discord_message: Message, _args: string[]) {
+
 }

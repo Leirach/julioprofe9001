@@ -47,5 +47,18 @@ function randBool (probability: number) {
 function sleep (sec: number) {
     return new Promise(resolve => setTimeout(resolve, sec*1000));
 }
+/**
+ * Return checks if a given string is a url
+ * @param str 
+ */
+function isURL(str: string) {
+    var pattern = new RegExp('^(https?:\\/\\/)?'+ // protocol
+    '((([a-z\\d]([a-z\\d-]*[a-z\\d])*)\\.?)+[a-z]{2,}|'+ // domain name
+    '((\\d{1,3}\\.){3}\\d{1,3}))'+ // OR ip (v4) address
+    '(\\:\\d+)?(\\/[-a-z\\d%_.~+]*)*'+ // port and path
+    '(\\?[;&a-z\\d%_.~+=-]*)?'+ // query string
+    '(\\#[-a-z\\d_]*)?$','i'); // fragment locator
+    return pattern.test(str);
+  }
 
-export {loadCopypastas, getRandom, randBool, sleep}
+export {loadCopypastas, getRandom, randBool, sleep, isURL}

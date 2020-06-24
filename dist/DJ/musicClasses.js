@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.QueueContruct = exports.Song = void 0;
+exports.QueueContract = exports.Song = void 0;
 class Song {
     constructor(title = "", url, duration) {
         this.title = title;
@@ -9,7 +9,7 @@ class Song {
     }
 }
 exports.Song = Song;
-class QueueContruct {
+class QueueContract {
     constructor(discord_message, voiceChannel) {
         this.textChannel = discord_message.channel;
         this.voiceChannel = voiceChannel;
@@ -19,4 +19,4 @@ class QueueContruct {
         this.playing = true;
     }
 }
-exports.QueueContruct = QueueContruct;
+exports.QueueContract = QueueContract;

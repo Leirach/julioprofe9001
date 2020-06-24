@@ -1,9 +1,8 @@
 import dotenv from 'dotenv';
+dotenv.config();
 import express from 'express';
 import path from 'path';
 import {initBot} from './bot'
-
-dotenv.config();
 
 // static webpage
 const app = express();
