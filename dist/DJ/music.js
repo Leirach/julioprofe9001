@@ -44,6 +44,7 @@ exports.musicCommands = {
     "skip": skip,
     "stop": stop,
     "dc": stop,
+    "shuffle": shuffle
 };
 /**
  * Plays music?
@@ -62,10 +63,15 @@ function play(discord_message, args) {
         // tries to parse url
         let result;
         if (utilities_1.isURL(args[0])) {
+            console.log(`getting from url ${args[0]}`);
             result = yield ytUitls.getSongs(args[0]);
         }
         else {
-            result = yield ytUitls.searchYT(args[0]);
+            if (!args.join(' ')) {
+                return "Tocame esta XD";
+            }
+            console.log(`searching for ${args.join(' ')}`);
+            result = yield ytUitls.searchYT(args.join(' '));
         }
         //if a queueContract already exists (bot is already playing a song)
         // push a song in the array and return confirmation message
@@ -77,17 +83,22 @@ function play(discord_message, args) {
                 return `**${result.title}** agregado a la playlist`;
             }
             else {
-                serverQueue.songs.concat(result);
+                serverQueue.songs = serverQueue.songs.concat(result);
                 return `Agregads un chingo de canciones`;
             }
         }
         // Otherwise create new contract and start playing music boi
         serverQueue = new musicClasses_1.QueueContract(discord_message, voiceChannel);
         globalQueues.set(discord_message.guild.id, serverQueue);
-        if (result instanceof musicClasses_1.Song)
+        if (result instanceof musicClasses_1.Song) {
+            console.log("pushing song");
             serverQueue.songs.push(result);
-        else
-            serverQueue.songs.concat(result);
+        }
+        else {
+            console.log("concatenating playlist");
+            serverQueue.songs = serverQueue.songs.concat(result);
+        }
+        console.log(serverQueue.songs[0]);
         try {
             serverQueue.connection = yield voiceChannel.join();
             playSong(discord_message.guild, serverQueue.songs[0]);
@@ -126,12 +137,16 @@ function queue(discord_message, _args) {
             return "No hay ni madres aqui";
         }
         const next10 = serverQueue.songs.slice(0, 11);
-        let msg = `Now playing: ${next10[0]}\nUp Next:\n`;
+        var msg = `Now playing: ${next10[0].title}\nUp Next:\n`;
         next10.forEach((song, idx) => {
             if (idx > 0) {
-                msg.concat(`${idx}: ${song.title}\n`);
+                msg = msg.concat(`${idx}: ${song.title}\n`);
             }
         });
+        console.log(next10.length);
+        if (next10.length < 2) {
+            msg = msg.concat("Nada XD");
+        }
         return msg;
     });
 }
@@ -165,4 +180,11 @@ function playskip(discord_message, _args) {
     serverQueue.connection.dispatcher.end();
 }
 function shuffle(discord_message, _args) {
+    let serverQueue = globalQueues.get(discord_message.guild.id);
+    if (!serverQueue)
+        return "No hay ni madres aquí";
+    let songs = serverQueue.songs.slice(1);
+    songs = utilities_1.shuffleArray(songs);
+    songs.unshift(serverQueue.songs[0]);
+    serverQueue.songs = songs;
 }

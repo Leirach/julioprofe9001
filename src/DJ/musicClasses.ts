@@ -16,7 +16,7 @@ export class QueueContract {
     textChannel: TextChannel | DMChannel | NewsChannel;
     voiceChannel: VoiceChannel;
     connection: VoiceConnection| null;
-    songs: Array<any>;
+    songs: Array<Song>;
     volume: number;
     playing: boolean;
 

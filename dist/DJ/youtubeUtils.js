@@ -48,13 +48,13 @@ function getPlaylist(playlist, nextPageToken) {
         console.log("getting video info for 50 vids");
         let videoInfo = yield youtube.videos.list({
             key: apiKey,
-            part: ['snippet', 'contentDetails'],
+            part: ['snippet'],
             id: videoIds,
         });
         console.log("done getting");
         console.log("mapping to songs");
         let songs = videoInfo.data.items.map(item => {
-            return new musicClasses_1.Song(item.snippet.title, prependURL + item.id, item.contentDetails.duration);
+            return new musicClasses_1.Song(item.snippet.title, prependURL + item.id, "0");
         });
         console.log("done mapping");
         return songs.concat(yield getPlaylist(playlist, res.data.nextPageToken));

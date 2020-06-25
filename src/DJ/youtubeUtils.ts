@@ -35,14 +35,14 @@ export async function getPlaylist(playlist: string, nextPageToken: string): Prom
     console.log("getting video info for 50 vids");
     let videoInfo = await youtube.videos.list({
         key: apiKey,
-        part: ['snippet','contentDetails'],
+        part: ['snippet'],
         id: videoIds,
     });
     console.log("done getting");
 
     console.log("mapping to songs");
     let songs = videoInfo.data.items.map(item => {
-        return new Song(item.snippet.title,  prependURL+item.id, item.contentDetails.duration);
+        return new Song(item.snippet.title,  prependURL+item.id, "0");
     });
     console.log("done mapping");
 
