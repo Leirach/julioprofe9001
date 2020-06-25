@@ -4,11 +4,9 @@ import { Song } from "./musicClasses";
 
 const youtube = google.youtube('v3');
 const apiKey = process.env.YT_API_KEY;
-console.log(apiKey)
 const prependURL = 'https://www.youtube.com/watch?v=';
 
 export async function getPlaylist(playlist: string, nextPageToken: string): Promise<Array<Song>> {
-    console.log(nextPageToken);
     // check pagination for really long playlists
     if(!nextPageToken)
         return Array<Song>();
@@ -24,27 +22,24 @@ export async function getPlaylist(playlist: string, nextPageToken: string): Prom
         pageToken: nextPageToken,
         maxResults: 50,
     });
-    console.log("got playlist");
+
     // map the ids to an array and then request the video info
     // 50 at a time to reduce api quota usage
-    console.log("getting song ids");
     let videoIds = res.data.items.map(item => {
         return item.snippet.resourceId.videoId;
     });
-    console.log("done getting ids");
-    console.log("getting video info for 50 vids");
+    
+    // This nasty ass bottleneck will stop the thread for ~500 ms every 50 songs in a playlist
+    // I should probably do something about it
     let videoInfo = await youtube.videos.list({
         key: apiKey,
         part: ['snippet'],
         id: videoIds,
     });
-    console.log("done getting");
 
-    console.log("mapping to songs");
     let songs = videoInfo.data.items.map(item => {
         return new Song(item.snippet.title,  prependURL+item.id, "0");
     });
-    console.log("done mapping");
 
     return songs.concat(await getPlaylist(playlist, res.data.nextPageToken));
 }

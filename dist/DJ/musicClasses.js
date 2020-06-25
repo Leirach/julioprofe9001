@@ -17,6 +17,7 @@ class QueueContract {
         this.songs = Array();
         this.volume = 5;
         this.playing = true;
+        this.loop = false;
     }
 }
 exports.QueueContract = QueueContract;

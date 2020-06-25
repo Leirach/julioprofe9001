@@ -18,11 +18,9 @@ const ytdl_core_1 = __importDefault(require("ytdl-core"));
 const musicClasses_1 = require("./musicClasses");
 const youtube = googleapis_1.google.youtube('v3');
 const apiKey = process.env.YT_API_KEY;
-console.log(apiKey);
 const prependURL = 'https://www.youtube.com/watch?v=';
 function getPlaylist(playlist, nextPageToken) {
     return __awaiter(this, void 0, void 0, function* () {
-        console.log(nextPageToken);
         // check pagination for really long playlists
         if (!nextPageToken)
             return Array();
@@ -37,26 +35,21 @@ function getPlaylist(playlist, nextPageToken) {
             pageToken: nextPageToken,
             maxResults: 50,
         });
-        console.log("got playlist");
         // map the ids to an array and then request the video info
         // 50 at a time to reduce api quota usage
-        console.log("getting song ids");
         let videoIds = res.data.items.map(item => {
             return item.snippet.resourceId.videoId;
         });
-        console.log("done getting ids");
-        console.log("getting video info for 50 vids");
+        // This nasty ass bottleneck will stop the thread for ~500 ms every 50 songs in a playlist
+        // I should probably do something about it
         let videoInfo = yield youtube.videos.list({
             key: apiKey,
             part: ['snippet'],
             id: videoIds,
         });
-        console.log("done getting");
-        console.log("mapping to songs");
         let songs = videoInfo.data.items.map(item => {
             return new musicClasses_1.Song(item.snippet.title, prependURL + item.id, "0");
         });
-        console.log("done mapping");
         return songs.concat(yield getPlaylist(playlist, res.data.nextPageToken));
     });
 }

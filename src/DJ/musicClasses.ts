@@ -19,6 +19,7 @@ export class QueueContract {
     songs: Array<Song>;
     volume: number;
     playing: boolean;
+    loop: boolean;
 
     constructor(discord_message: Message, voiceChannel: VoiceChannel) {
         this.textChannel = discord_message.channel;
@@ -27,6 +28,7 @@ export class QueueContract {
         this.songs = Array<Song>();
         this.volume = 5;
         this.playing = true;
+        this.loop = false;
     }
 }
 
