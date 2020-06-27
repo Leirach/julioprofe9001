@@ -5,6 +5,7 @@ import { QueueContract, Song } from './musicClasses';
 import * as ytUitls from './youtubeUtils';
 import { isURL, shuffleArray } from "../utilities";
 import * as config from '../config.json'
+import { replies } from "../replies";
 
 const bufferSize = 1<<25;
 
@@ -66,9 +67,8 @@ async function play(discord_message: Message, args: string[]) {
         }
         else {
             serverQueue.songs = serverQueue.songs.concat(result);
-            return `Agregads un chingo de canciones`;
+            return `Agregadas un chingo de canciones`;
         }
-        
     }
 
     // Otherwise create new contract and start playing music boi
@@ -86,6 +86,7 @@ async function play(discord_message: Message, args: string[]) {
 
     console.log(serverQueue.songs[0]);
     try {
+        serverQueue.textChannel.send(`Tocando **${serverQueue.songs[0].title}**`)
         serverQueue.connection = await voiceChannel.join();
         playSong(discord_message.guild, serverQueue.songs[0]);
     } catch (err) {
@@ -194,6 +195,7 @@ function shuffle(discord_message: Message, _args: string[]) {
     songs = shuffleArray(songs);
     songs.unshift(serverQueue.songs[0])
     serverQueue.songs = songs;
+    return "Shuffled 😩👌";
 }
 
 async function volume(discord_message: Message, args: string[]) {

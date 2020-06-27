@@ -93,7 +93,7 @@ function play(discord_message, args) {
             }
             else {
                 serverQueue.songs = serverQueue.songs.concat(result);
-                return `Agregads un chingo de canciones`;
+                return `Agregadas un chingo de canciones`;
             }
         }
         // Otherwise create new contract and start playing music boi
@@ -109,6 +109,7 @@ function play(discord_message, args) {
         }
         console.log(serverQueue.songs[0]);
         try {
+            serverQueue.textChannel.send(`Tocando **${serverQueue.songs[0].title}**`);
             serverQueue.connection = yield voiceChannel.join();
             playSong(discord_message.guild, serverQueue.songs[0]);
         }
@@ -212,6 +213,7 @@ function shuffle(discord_message, _args) {
     songs = utilities_1.shuffleArray(songs);
     songs.unshift(serverQueue.songs[0]);
     serverQueue.songs = songs;
+    return "Shuffled 😩👌";
 }
 function volume(discord_message, args) {
     return __awaiter(this, void 0, void 0, function* () {
