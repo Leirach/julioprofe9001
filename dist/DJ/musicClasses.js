@@ -2,10 +2,11 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.QueueContract = exports.Song = void 0;
 class Song {
-    constructor(title = "", url, duration) {
+    constructor(title = "", url, duration, thumbnail) {
         this.title = title;
         this.url = url;
         this.duration = duration;
+        this.thumbnail = thumbnail;
     }
 }
 exports.Song = Song;

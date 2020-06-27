@@ -8,17 +8,15 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getSongs = exports.songFromURL = exports.searchYT = exports.getPlaylist = void 0;
+exports.getTimestamp = exports.getSongs = exports.songFromURL = exports.getSongMetadata = exports.searchYT = exports.getPlaylist = void 0;
 const googleapis_1 = require("googleapis");
-const ytdl_core_1 = __importDefault(require("ytdl-core"));
 const musicClasses_1 = require("./musicClasses");
+const luxon_1 = require("luxon");
 const youtube = googleapis_1.google.youtube('v3');
 const apiKey = process.env.YT_API_KEY;
 const prependURL = 'https://www.youtube.com/watch?v=';
+const regexURL = /^.*((youtu.be\/)|(v\/)|(\/u\/\w\/)|(embed\/)|(watch\?))\??v?=?([^#&?]*).*/;
 function getPlaylist(playlist, nextPageToken) {
     return __awaiter(this, void 0, void 0, function* () {
         // check pagination for really long playlists
@@ -44,11 +42,11 @@ function getPlaylist(playlist, nextPageToken) {
         // I should probably do something about it
         let videoInfo = yield youtube.videos.list({
             key: apiKey,
-            part: ['snippet'],
+            part: ['snippet', 'contentDetails'],
             id: videoIds,
         });
         let songs = videoInfo.data.items.map(item => {
-            return new musicClasses_1.Song(item.snippet.title, prependURL + item.id, "0");
+            return new musicClasses_1.Song(item.snippet.title, prependURL + item.id, item.contentDetails.duration, item.snippet.thumbnails.medium.url);
         });
         return songs.concat(yield getPlaylist(playlist, res.data.nextPageToken));
     });
@@ -73,20 +71,44 @@ function searchYT(keyword) {
             id: [id],
         });
         const firstResult = videoInfo.data.items[0];
-        return new musicClasses_1.Song(firstResult.snippet.title, prependURL + firstResult.id, firstResult.contentDetails.duration);
+        return new musicClasses_1.Song(firstResult.snippet.title, prependURL + firstResult.id, firstResult.contentDetails.duration, firstResult.snippet.thumbnails.medium.url);
     });
 }
 exports.searchYT = searchYT;
-function songFromURL(url) {
+function getSongMetadata(url) {
     return __awaiter(this, void 0, void 0, function* () {
-        try {
-            let songInfo = yield ytdl_core_1.default.getInfo(url);
-            songInfo.length_seconds;
-            return new musicClasses_1.Song(songInfo.title, url, songInfo.length_seconds);
-        }
-        catch (err) {
+        var match = url.match(regexURL);
+        let songid = (match && match[7].length == 11) ? match[7] : '';
+        if (!songid) {
             return null;
         }
+        let res = yield youtube.videos.list({
+            key: apiKey,
+            part: ['snippet', 'contentDetails'],
+            id: [songid],
+        });
+        if (!res) {
+            return null;
+        }
+        return res.data.items[0];
+    });
+}
+exports.getSongMetadata = getSongMetadata;
+function songFromURL(url) {
+    return __awaiter(this, void 0, void 0, function* () {
+        let song = yield getSongMetadata(url);
+        if (!song) {
+            return null;
+        }
+        return new musicClasses_1.Song(song.snippet.title, prependURL + song.id, song.contentDetails.duration, song.snippet.thumbnails.medium.url);
+        /*
+        try {
+            let songInfo = await ytdl.getInfo(url);
+            return new Song(songInfo.title, url, songInfo.length_seconds);
+        } catch (err) {
+            return null;
+        }
+        */
     });
 }
 exports.songFromURL = songFromURL;
@@ -101,3 +123,11 @@ function getSongs(url) {
     });
 }
 exports.getSongs = getSongs;
+function getTimestamp(stream, total) {
+    let ltime = luxon_1.Duration.fromMillis(stream);
+    let tTime = luxon_1.Duration.fromISO(total);
+    let format;
+    format = tTime.as('hours') < 1 ? 'mm:ss' : 'hh:mm:ss';
+    return ltime.toFormat(format) + '/' + tTime.toFormat(format);
+}
+exports.getTimestamp = getTimestamp;

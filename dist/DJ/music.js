@@ -37,6 +37,7 @@ const ytdl_core_1 = __importDefault(require("ytdl-core"));
 const musicClasses_1 = require("./musicClasses");
 const ytUitls = __importStar(require("./youtubeUtils"));
 const utilities_1 = require("../utilities");
+const config = __importStar(require("../config.json"));
 const bufferSize = 1 << 25;
 let globalQueues = new discord_js_1.Collection();
 exports.musicCommands = {
@@ -47,13 +48,15 @@ exports.musicCommands = {
     "dc": stop,
     "shuffle": shuffle,
     "playtop": playtop,
+    "pt": playtop,
     "playskip": playskip,
+    "ps": playskip,
     "volume": volume,
     "np": nowPlaying,
     "loop": loop,
 };
 /**
- * Plays music?
+ * Plays music!
  * @param discord_message
  * @param args
  */
@@ -62,7 +65,7 @@ function play(discord_message, args) {
         const voiceChannel = discord_message.member.voice.channel;
         if (!voiceChannel)
             return "No estás conectado en vc";
-        const permissions = voiceChannel.permissionsFor("312665173053931520");
+        const permissions = voiceChannel.permissionsFor(config.botID);
         if (!permissions.has("CONNECT") || !permissions.has("SPEAK")) {
             return "Necesito permisos para conectar en ese canal";
         }
@@ -147,27 +150,6 @@ function playSong(guild, song) {
     dispatcher.setVolumeLogarithmic(serverQueue.volume / 5);
     //serverQueue.textChannel.send(`Start playing: **${song.title}**`);
 }
-function queue(discord_message, _args) {
-    var _a;
-    return __awaiter(this, void 0, void 0, function* () {
-        const serverQueue = globalQueues.get((_a = discord_message.guild) === null || _a === void 0 ? void 0 : _a.id);
-        if (!(serverQueue === null || serverQueue === void 0 ? void 0 : serverQueue.songs)) {
-            return "No hay ni madres aqui";
-        }
-        const next10 = serverQueue.songs.slice(0, 11);
-        var msg = `Now playing: ${next10[0].title}\nUp Next:\n`;
-        next10.forEach((song, idx) => {
-            if (idx > 0) {
-                msg = msg.concat(`${idx}: ${song.title}\n`);
-            }
-        });
-        console.log(next10.length);
-        if (next10.length < 2) {
-            msg = msg.concat("Nada XD");
-        }
-        return msg;
-    });
-}
 function skip(discord_message, _args) {
     const serverQueue = globalQueues.get(discord_message.guild.id);
     if (!serverQueue)
@@ -248,8 +230,46 @@ function volume(discord_message, args) {
         serverQueue.connection.dispatcher.setVolumeLogarithmic(serverQueue.volume / 5);
     });
 }
-function nowPlaying(discord_message, args) {
+function nowPlaying(discord_message, _args) {
     return __awaiter(this, void 0, void 0, function* () {
+        const serverQueue = globalQueues.get(discord_message.guild.id);
+        if (!(serverQueue === null || serverQueue === void 0 ? void 0 : serverQueue.songs))
+            return "No hay ni madres aquí";
+        //get song and send fancy embed
+        const np = serverQueue.songs[0];
+        // get time and format it accordingly
+        //let songinfo = await ytUitls.getSongMetadata(np.url);
+        let time = serverQueue.connection.dispatcher.streamTime;
+        const timestamp = ytUitls.getTimestamp(time, np.duration);
+        let embed = new discord_js_1.MessageEmbed()
+            .setAuthor("Now playing:", config.avatarUrl)
+            .setTitle(np.title)
+            .setURL(np.url)
+            .setThumbnail(config.avatarUrl)
+            .setDescription(`${timestamp}`)
+            .setImage(np.thumbnail);
+        return embed;
+    });
+}
+function queue(discord_message, _args) {
+    var _a;
+    return __awaiter(this, void 0, void 0, function* () {
+        const serverQueue = globalQueues.get((_a = discord_message.guild) === null || _a === void 0 ? void 0 : _a.id);
+        if (!(serverQueue === null || serverQueue === void 0 ? void 0 : serverQueue.songs)) {
+            return "No hay ni madres aqui";
+        }
+        const next10 = serverQueue.songs.slice(0, 11);
+        var msg = `Now playing: ${next10[0].title}\nUp Next:\n`;
+        next10.forEach((song, idx) => {
+            if (idx > 0) {
+                msg = msg.concat(`${idx}: ${song.title}\n`);
+            }
+        });
+        console.log(next10.length);
+        if (next10.length < 2) {
+            msg = msg.concat("Nada XD");
+        }
+        return msg;
     });
 }
 function loop(discord_message, args) {

@@ -1,8 +1,10 @@
-import { Message, Collection, Guild } from "discord.js";
+import { Message, Collection, Guild, MessageEmbed } from "discord.js";
 import ytdl from 'ytdl-core';
+import { Duration } from 'luxon';
 import { QueueContract, Song } from './musicClasses';
 import * as ytUitls from './youtubeUtils';
 import { isURL, shuffleArray } from "../utilities";
+import * as config from '../config.json'
 
 const bufferSize = 1<<25;
 
@@ -17,14 +19,16 @@ export let musicCommands: FunctionDictionary = {
     "dc": stop,
     "shuffle": shuffle,
     "playtop": playtop,
+    "pt": playtop,
     "playskip": playskip,
+    "ps": playskip,
     "volume": volume,
     "np": nowPlaying,
     "loop": loop,
 }
 
 /**
- * Plays music?
+ * Plays music!
  * @param discord_message 
  * @param args 
  */
@@ -32,7 +36,7 @@ async function play(discord_message: Message, args: string[]) {
     const voiceChannel = discord_message.member.voice.channel;
     if (!voiceChannel)
         return "No estás conectado en vc";
-    const permissions = voiceChannel.permissionsFor("312665173053931520");
+    const permissions = voiceChannel.permissionsFor(config.botID);
     if (!permissions.has("CONNECT") || !permissions.has("SPEAK")) {
         return "Necesito permisos para conectar en ese canal";
     }
@@ -128,26 +132,6 @@ function playSong(guild: Guild, song: any) {
     //serverQueue.textChannel.send(`Start playing: **${song.title}**`);
 }
 
-async function queue(discord_message: Message, _args: string[]) {
-    const serverQueue = globalQueues.get(discord_message.guild?.id);
-    if (!serverQueue?.songs) {
-        return "No hay ni madres aqui";
-    }
-
-    const next10 = serverQueue.songs.slice(0, 11);
-    var msg = `Now playing: ${next10[0].title}\nUp Next:\n`;
-    next10.forEach( (song, idx) =>{
-        if (idx > 0) {
-            msg = msg.concat(`${idx}: ${song.title}\n`);
-        }
-    });
-    console.log(next10.length)
-    if (next10.length < 2) {
-        msg = msg.concat("Nada XD");
-    }
-    return msg;
-}
-
 function skip(discord_message: Message, _args: string[]) {
     const serverQueue = globalQueues.get(discord_message.guild.id);
     if (!serverQueue)
@@ -229,7 +213,46 @@ async function volume(discord_message: Message, args: string[]) {
     serverQueue.connection.dispatcher.setVolumeLogarithmic(serverQueue.volume / 5);
 }
 
-async function nowPlaying(discord_message: Message, args: string[]) {
+async function nowPlaying(discord_message: Message, _args: string[]) {
+    const serverQueue = globalQueues.get(discord_message.guild.id);
+    if (!serverQueue?.songs)
+        return "No hay ni madres aquí";
+
+    //get song and send fancy embed
+    const np = serverQueue.songs[0];
+    // get time and format it accordingly
+    //let songinfo = await ytUitls.getSongMetadata(np.url);
+    let time = serverQueue.connection.dispatcher.streamTime;
+    const timestamp = ytUitls.getTimestamp(time, np.duration);
+
+    let embed = new MessageEmbed()
+        .setAuthor("Now playing:", config.avatarUrl)
+        .setTitle(np.title)
+        .setURL(np.url)
+        .setThumbnail(config.avatarUrl)
+        .setDescription(`${timestamp}`)
+        .setImage(np.thumbnail);
+    return embed;
+}
+
+async function queue(discord_message: Message, _args: string[]) {
+    const serverQueue = globalQueues.get(discord_message.guild?.id);
+    if (!serverQueue?.songs) {
+        return "No hay ni madres aqui";
+    }
+
+    const next10 = serverQueue.songs.slice(0, 11);
+    var msg = `Now playing: ${next10[0].title}\nUp Next:\n`;
+    next10.forEach( (song, idx) =>{
+        if (idx > 0) {
+            msg = msg.concat(`${idx}: ${song.title}\n`);
+        }
+    });
+    console.log(next10.length)
+    if (next10.length < 2) {
+        msg = msg.concat("Nada XD");
+    }
+    return msg;
 }
 
 async function loop(discord_message: Message, args: string[]) {

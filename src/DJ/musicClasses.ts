@@ -5,10 +5,12 @@ export class Song {
     title: string;
     url: string;
     duration: string;
-    constructor(title: string = "", url: string, duration: string) {
+    thumbnail: string;
+    constructor(title: string = "", url: string, duration: string, thumbnail: string) {
         this.title = title;
         this.url = url;
-        this.duration = duration
+        this.duration = duration;
+        this.thumbnail = thumbnail;
     }
 }
 

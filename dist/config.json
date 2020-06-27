@@ -5,5 +5,7 @@
         "copypasta.txt",
         "redditpasta.txt"
     ],
-    "purgatoryChannel": "420073984579731468"
+    "purgatoryChannel": "420073984579731468",
+    "avatarUrl": "https://cdn.discordapp.com/app-icons/312665173053931520/afbc36a4a6d2d85ec2d33e6337b233be.png",
+    "botID": "312665173053931520"
 }
