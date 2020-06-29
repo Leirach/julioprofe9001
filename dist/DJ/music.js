@@ -72,14 +72,14 @@ function play(discord_message, args) {
         // tries to parse url
         let result;
         if (utilities_1.isURL(args[0])) {
-            console.log(`getting from url ${args[0]}`);
+            //console.log(`getting from url ${args[0]}`);
             result = yield ytUitls.getSongs(args[0]);
         }
         else {
             if (!args.join(' ')) {
                 return "Tocame esta XD";
             }
-            console.log(`searching for ${args.join(' ')}`);
+            //console.log(`searching for ${args.join(' ')}`)
             result = yield ytUitls.searchYT(args.join(' '));
         }
         //if a queueContract already exists (bot is already playing a song)
@@ -100,11 +100,11 @@ function play(discord_message, args) {
         serverQueue = new musicClasses_1.QueueContract(discord_message, voiceChannel);
         globalQueues.set(discord_message.guild.id, serverQueue);
         if (result instanceof musicClasses_1.Song) {
-            console.log("pushing song");
+            //console.log("pushing song");
             serverQueue.songs.push(result);
         }
         else {
-            console.log("concatenating playlist");
+            //console.log("concatenating playlist");
             serverQueue.songs = serverQueue.songs.concat(result);
         }
         console.log(serverQueue.songs[0]);
@@ -129,27 +129,27 @@ function playSong(guild, song) {
     }
     const dispatcher = serverQueue.connection
         .play(ytdl_core_1.default(song.url, { filter: 'audioonly', highWaterMark: bufferSize })
-        .on('error', err => {
-        console.log(err);
-    })
-        .on('close', (data) => {
-        console.log('closed reason: ', data);
-    })
-        .on('end', (data) => {
-        console.log('ended reason: ', data);
-    })).on("finish", () => {
+    // Help, im only supposed to increase this param in ytdl and i dont even know why
+    // { highWaterMark: 1024 * 1024 * 10 } // 10mb buffer, supposedly
+    ).on("finish", () => {
         if (!serverQueue.loop)
             serverQueue.songs.shift();
         playSong(guild, serverQueue.songs[0]);
     })
         .on("error", (error) => {
-        serverQueue.textChannel.send(error.message);
         console.error(error);
-        serverQueue.songs.shift();
+        let np = serverQueue.songs.shift();
+        let embed = new discord_js_1.MessageEmbed()
+            .setAuthor("No se puede reproducir:", config.avatarUrl)
+            .setTitle(np.title)
+            .setURL(np.url)
+            .setDescription(`Razon: ${error.message}`)
+            .setThumbnail(config.errorImg)
+            .setImage(np.thumbnail);
+        serverQueue.textChannel.send(embed);
         playSong(guild, serverQueue.songs[0]);
     });
     dispatcher.setVolumeLogarithmic(serverQueue.volume / 5);
-    //serverQueue.textChannel.send(`Start playing: **${song.title}**`);
 }
 function skip(discord_message, _args) {
     const serverQueue = globalQueues.get(discord_message.guild.id);
@@ -281,7 +281,10 @@ function loop(discord_message, args) {
             return "No hay ni madres aquí";
         if (!discord_message.member.voice.channel)
             return "No mames, ni la estás oyendo";
-        serverQueue.loop = true;
-        return "Loop-the-loop";
+        serverQueue.loop = !serverQueue.loop;
+        if (serverQueue.loop)
+            return "Loop-the-loop";
+        else
+            return "No more loop";
     });
 }

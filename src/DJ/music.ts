@@ -6,6 +6,7 @@ import * as ytUitls from './youtubeUtils';
 import { isURL, shuffleArray } from "../utilities";
 import * as config from '../config.json'
 import { replies } from "../replies";
+import { cursorTo } from "readline";
 
 const bufferSize = 1<<25;
 
@@ -45,14 +46,14 @@ async function play(discord_message: Message, args: string[]) {
     // tries to parse url
     let result;
     if ( isURL(args[0]) ) {
-        console.log(`getting from url ${args[0]}`);
+        //console.log(`getting from url ${args[0]}`);
         result = await ytUitls.getSongs(args[0]);
     }
     else {
         if (!args.join(' ')){
             return "Tocame esta XD";
         }
-        console.log(`searching for ${args.join(' ')}`)
+        //console.log(`searching for ${args.join(' ')}`)
         result = await ytUitls.searchYT(args.join(' '))
     }
 
@@ -76,11 +77,11 @@ async function play(discord_message: Message, args: string[]) {
     globalQueues.set(discord_message.guild.id, serverQueue);
 
     if (result instanceof Song){
-        console.log("pushing song");
+        //console.log("pushing song");
         serverQueue.songs.push(result);
     }
     else {
-        console.log("concatenating playlist");
+        //console.log("concatenating playlist");
         serverQueue.songs = serverQueue.songs.concat(result);
     }
 
@@ -107,15 +108,6 @@ function playSong(guild: Guild, song: any) {
     const dispatcher = serverQueue.connection
     .play(
         ytdl(song.url, {filter: 'audioonly', highWaterMark: bufferSize})
-        .on('error', err =>{
-            console.log(err);
-        })
-        .on('close', (data:any) => {
-            console.log('closed reason: ', data)
-        })
-        .on('end', (data:any) => {
-            console.log('ended reason: ', data)
-        }),
         // Help, im only supposed to increase this param in ytdl and i dont even know why
         // { highWaterMark: 1024 * 1024 * 10 } // 10mb buffer, supposedly
     ).on("finish", () => {
@@ -124,13 +116,19 @@ function playSong(guild: Guild, song: any) {
         playSong(guild, serverQueue.songs[0]);
     })
     .on("error", (error: Error) => {
-        serverQueue.textChannel.send(error.message)
         console.error(error);
-        serverQueue.songs.shift();
+        let np = serverQueue.songs.shift();
+        let embed = new MessageEmbed()
+            .setAuthor("No se puede reproducir:", config.avatarUrl)
+            .setTitle(np.title)
+            .setURL(np.url)
+            .setDescription(`Razon: ${error.message}`)
+            .setThumbnail(config.errorImg)
+            .setImage(np.thumbnail);
+        serverQueue.textChannel.send(embed);
         playSong(guild, serverQueue.songs[0]);
     });
     dispatcher.setVolumeLogarithmic(serverQueue.volume / 5);
-    //serverQueue.textChannel.send(`Start playing: **${song.title}**`);
 }
 
 function skip(discord_message: Message, _args: string[]) {
@@ -263,6 +261,9 @@ async function loop(discord_message: Message, args: string[]) {
         return "No hay ni madres aquí";
     if (!discord_message.member.voice.channel)
         return "No mames, ni la estás oyendo";
-    serverQueue.loop = true;
-    return "Loop-the-loop";
+    serverQueue.loop = !serverQueue.loop;
+    if (serverQueue.loop)
+        return "Loop-the-loop";
+    else 
+        return "No more loop"
 }
