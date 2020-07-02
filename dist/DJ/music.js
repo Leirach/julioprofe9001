@@ -31,7 +31,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.musicCommands = void 0;
+exports.fetchPlaylist = exports.musicCommands = void 0;
 const discord_js_1 = require("discord.js");
 const ytdl_core_1 = __importDefault(require("ytdl-core"));
 const musicClasses_1 = require("./musicClasses");
@@ -55,6 +55,9 @@ exports.musicCommands = {
     "np": nowPlaying,
     "loop": loop,
 };
+function fetchPlaylist() {
+}
+exports.fetchPlaylist = fetchPlaylist;
 /**
  * Plays music!
  * @param discord_message
@@ -107,7 +110,7 @@ function play(discord_message, args) {
             //console.log("concatenating playlist");
             serverQueue.songs = serverQueue.songs.concat(result);
         }
-        console.log(serverQueue.songs[0]);
+        // console.log(serverQueue.songs[0]);
         try {
             serverQueue.textChannel.send(`Tocando **${serverQueue.songs[0].title}**`);
             serverQueue.connection = yield voiceChannel.join();
@@ -178,14 +181,14 @@ function playtop(discord_message, args) {
         // tries to parse url
         let result;
         if (utilities_1.isURL(args[0])) {
-            console.log(`getting from url ${args[0]}`);
+            // console.log(`getting from url ${args[0]}`);
             result = yield ytUitls.getSongs(args[0]);
         }
         else {
             if (!args.join(' ')) {
                 return "Tocame esta XD";
             }
-            console.log(`searching for ${args.join(' ')}`);
+            // console.log(`searching for ${args.join(' ')}`)
             result = yield ytUitls.searchYT(args.join(' '));
         }
         if (!(result instanceof musicClasses_1.Song)) {
@@ -267,7 +270,7 @@ function queue(discord_message, _args) {
                 msg = msg.concat(`${idx}: ${song.title}\n`);
             }
         });
-        console.log(next10.length);
+        // console.log(next10.length)
         if (next10.length < 2) {
             msg = msg.concat("Nada XD");
         }

@@ -29,6 +29,10 @@ export let musicCommands: FunctionDictionary = {
     "loop": loop,
 }
 
+export function fetchPlaylist() {
+    
+}
+
 /**
  * Plays music!
  * @param discord_message 
@@ -85,7 +89,7 @@ async function play(discord_message: Message, args: string[]) {
         serverQueue.songs = serverQueue.songs.concat(result);
     }
 
-    console.log(serverQueue.songs[0]);
+    // console.log(serverQueue.songs[0]);
     try {
         serverQueue.textChannel.send(`Tocando **${serverQueue.songs[0].title}**`)
         serverQueue.connection = await voiceChannel.join();
@@ -159,14 +163,14 @@ async function playtop(discord_message: Message, args: string[]) {
         // tries to parse url
     let result;
     if ( isURL(args[0]) ) {
-        console.log(`getting from url ${args[0]}`);
+        // console.log(`getting from url ${args[0]}`);
         result = await ytUitls.getSongs(args[0]);
     }
     else {
         if (!args.join(' ')){
             return "Tocame esta XD";
         }
-        console.log(`searching for ${args.join(' ')}`)
+        // console.log(`searching for ${args.join(' ')}`)
         result = await ytUitls.searchYT(args.join(' '))
     }
     if(!(result instanceof Song)) {
@@ -248,7 +252,7 @@ async function queue(discord_message: Message, _args: string[]) {
             msg = msg.concat(`${idx}: ${song.title}\n`);
         }
     });
-    console.log(next10.length)
+    // console.log(next10.length)
     if (next10.length < 2) {
         msg = msg.concat("Nada XD");
     }

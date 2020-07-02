@@ -82,5 +82,35 @@ export let reactions = [
         "triggers": [
             "👌"
         ]
+    },
+    {
+    "emoji": "😩",
+        "triggers": [
+            "😩",
+            "hentai",
+            "porn",
+            "me vine"
+        ]
     }
+]
+
+export const musicPlay = [
+    "Ah esa es buena",
+    "Me vine",
+    "Absolute banger",
+    "Esa está buena",
+    "😩👌",
+    "&loop jkjk unless...",
+
+    "Apoco les gusta esta basura",
+    "Nmms qué asco",
+    "Wakala, pero bueno",
+    "&skip lmao",
+    "Mejor pongan Megalovania",
+
+    "Never gonna give you up",
+    "Te la voy a tocar",
+    "Dime donde te la toco",
+    "Megalovania otra vez?",
+    "Aeugh"
 ]

@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.reactions = exports.replies = void 0;
+exports.musicPlay = exports.reactions = exports.replies = void 0;
 exports.replies = {
     memes: {
         "ayy": "lmao",
@@ -83,5 +83,32 @@ exports.reactions = [
         "triggers": [
             "👌"
         ]
+    },
+    {
+        "emoji": "😩",
+        "triggers": [
+            "😩",
+            "hentai",
+            "porn",
+            "me vine"
+        ]
     }
+];
+exports.musicPlay = [
+    "Ah esa es buena",
+    "Me vine",
+    "Absolute banger",
+    "Esa está buena",
+    "😩👌",
+    "&loop jkjk unless...",
+    "Apoco les gusta esta basura",
+    "Nmms qué asco",
+    "Wakala, pero bueno",
+    "&skip lmao",
+    "Mejor pongan Megalovania",
+    "Never gonna give you up",
+    "Te la voy a tocar",
+    "Dime donde te la toco",
+    "Megalovania otra vez?",
+    "Aeugh"
 ];

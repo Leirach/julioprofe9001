@@ -16,7 +16,7 @@ export async function getPlaylist(playlist: string, nextPageToken: string): Prom
         nextPageToken = null;
 
     // get video IDs from playlist
-    console.log("getting playlist");
+    // console.log("getting playlist");
     let res = await youtube.playlistItems.list({
         key: apiKey,
         part: ['snippet'],

@@ -25,7 +25,7 @@ function getPlaylist(playlist, nextPageToken) {
         if (nextPageToken == 'first')
             nextPageToken = null;
         // get video IDs from playlist
-        console.log("getting playlist");
+        // console.log("getting playlist");
         let res = yield youtube.playlistItems.list({
             key: apiKey,
             part: ['snippet'],
