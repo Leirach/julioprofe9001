@@ -31,7 +31,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.fetchPlaylist = exports.musicCommands = void 0;
+exports.musicCommands = void 0;
 const discord_js_1 = require("discord.js");
 const ytdl_core_1 = __importDefault(require("ytdl-core"));
 const musicClasses_1 = require("./musicClasses");
@@ -54,10 +54,25 @@ exports.musicCommands = {
     "volume": volume,
     "np": nowPlaying,
     "loop": loop,
+    "playlist": playlist,
+    "pp": preloadPlaylist
 };
-function fetchPlaylist() {
+function preloadPlaylist() {
+    return __awaiter(this, void 0, void 0, function* () {
+        try {
+            yield ytUitls.cachePlaylist();
+        }
+        catch (err) {
+            return `Lmao la cagué: ${err.message}`;
+        }
+        return "Big pp, done.";
+    });
 }
-exports.fetchPlaylist = fetchPlaylist;
+function playlist(discord_message, args) {
+    return __awaiter(this, void 0, void 0, function* () {
+        return yield play(discord_message, [config.playlist]);
+    });
+}
 /**
  * Plays music!
  * @param discord_message
@@ -82,7 +97,6 @@ function play(discord_message, args) {
             if (!args.join(' ')) {
                 return "Tocame esta XD";
             }
-            //console.log(`searching for ${args.join(' ')}`)
             result = yield ytUitls.searchYT(args.join(' '));
         }
         //if a queueContract already exists (bot is already playing a song)
@@ -243,7 +257,6 @@ function nowPlaying(discord_message, _args) {
         //get song and send fancy embed
         const np = serverQueue.songs[0];
         // get time and format it accordingly
-        //let songinfo = await ytUitls.getSongMetadata(np.url);
         let time = serverQueue.connection.dispatcher.streamTime;
         const timestamp = ytUitls.getTimestamp(time, np.duration);
         let embed = new discord_js_1.MessageEmbed()

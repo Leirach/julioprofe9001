@@ -1,14 +1,13 @@
 import { Message, Collection, Guild, MessageEmbed } from "discord.js";
 import ytdl from 'ytdl-core';
-import { Duration } from 'luxon';
 import { QueueContract, Song } from './musicClasses';
 import * as ytUitls from './youtubeUtils';
 import { isURL, shuffleArray } from "../utilities";
 import * as config from '../config.json'
 import { replies } from "../replies";
-import { cursorTo } from "readline";
 
 const bufferSize = 1<<25;
+
 
 let globalQueues = new Collection<string, QueueContract>();
 
@@ -27,10 +26,21 @@ export let musicCommands: FunctionDictionary = {
     "volume": volume,
     "np": nowPlaying,
     "loop": loop,
+    "playlist": playlist,
+    "pp": preloadPlaylist
 }
 
-export function fetchPlaylist() {
-    
+async function preloadPlaylist() {
+    try {
+        await ytUitls.cachePlaylist();
+    } catch (err) {
+        return `Lmao la cagué: ${err.message}`;
+    }
+    return "Big pp, done."
+}
+
+async function playlist(discord_message: Message, args: string[]) {
+    return await play(discord_message, [config.playlist]);
 }
 
 /**
@@ -57,7 +67,6 @@ async function play(discord_message: Message, args: string[]) {
         if (!args.join(' ')){
             return "Tocame esta XD";
         }
-        //console.log(`searching for ${args.join(' ')}`)
         result = await ytUitls.searchYT(args.join(' '))
     }
 
@@ -225,7 +234,6 @@ async function nowPlaying(discord_message: Message, _args: string[]) {
     //get song and send fancy embed
     const np = serverQueue.songs[0];
     // get time and format it accordingly
-    //let songinfo = await ytUitls.getSongMetadata(np.url);
     let time = serverQueue.connection.dispatcher.streamTime;
     const timestamp = ytUitls.getTimestamp(time, np.duration);
 

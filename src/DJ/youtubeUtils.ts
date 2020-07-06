@@ -1,14 +1,17 @@
 import { google } from 'googleapis';
-import ytdl from 'ytdl-core';
 import { Song } from "./musicClasses";
 import { Duration } from 'luxon';
+import * as config from '../config.json';
 
 const youtube = google.youtube('v3');
 const apiKey = process.env.YT_API_KEY;
 const prependURL = 'https://www.youtube.com/watch?v=';
 const regexURL = /^.*((youtu.be\/)|(v\/)|(\/u\/\w\/)|(embed\/)|(watch\?))\??v?=?([^#&?]*).*/
 
-export async function getPlaylist(playlist: string, nextPageToken: string): Promise<Array<Song>> {
+let cachedPlaylist: Song[] = [];
+
+async function getPlaylistRec(playlist: string, nextPageToken:string): Promise<Array<Song>> {
+    console.log(nextPageToken);
     // check pagination for really long playlists
     if(!nextPageToken)
         return Array<Song>();
@@ -43,34 +46,16 @@ export async function getPlaylist(playlist: string, nextPageToken: string): Prom
         return new Song(item.snippet.title,  prependURL+item.id, item.contentDetails.duration, item.snippet.thumbnails.medium.url);
     });
 
-    return songs.concat(await getPlaylist(playlist, res.data.nextPageToken));
+    return songs.concat(await getPlaylistRec(playlist, res.data.nextPageToken));
 }
 
-export async function searchYT(keyword: string){
-    let res = await youtube.search.list({
-        q: keyword,
-        key: apiKey,
-        part: ['snippet'],
-        safeSearch: "none",
-        maxResults: 1,
-    });
-    if (!res.data.items){
-        return null;
-    }
-    let id = res.data.items[0].id.videoId;
-    let videoInfo = await youtube.videos.list({
-        key: apiKey,
-        part: ['snippet','contentDetails'],
-        id: [id],
-    });
-
-    const firstResult = videoInfo.data.items[0];
-    return new Song(firstResult.snippet.title, prependURL+firstResult.id, firstResult.contentDetails.duration, firstResult.snippet.thumbnails.medium.url)
+async function getPlaylist(playlist: string): Promise<Array<Song>> {
+    return getPlaylistRec(playlist, 'first');
 }
 
-export async function getSongMetadata(url: string) {
+async function getSongMetadata(url: string) {
     var match = url.match(regexURL);
-    let songid = (match&&match[7].length==11)? match[7] : '';
+    let songid = (match&&match[7].length == 11)? match[7] : '';
     if (!songid) {
         return null;
     }
@@ -85,35 +70,77 @@ export async function getSongMetadata(url: string) {
     return res.data.items[0];
 }
 
-export async function songFromURL(url: string) {
+async function songFromURL(url: string) {
     let song = await getSongMetadata(url);
     if (!song) {
         return null;
     }
     return new Song(song.snippet.title, prependURL+song.id, song.contentDetails.duration, song.snippet.thumbnails.medium.url);
-    /*
+}
+
+export async function searchYT(keyword: string){
+    let res;
     try {
-        let songInfo = await ytdl.getInfo(url);
-        return new Song(songInfo.title, url, songInfo.length_seconds);
+        res = await youtube.search.list({
+            q: keyword,
+            key: apiKey,
+            part: ['snippet'],
+            safeSearch: "none",
+            maxResults: 1,
+        });
     } catch (err) {
+        console.error(err);
+    }
+
+    if (!res.data.items){
         return null;
     }
-    */
+    let id = res.data.items[0].id.videoId;
+    let videoInfo;
+    try {
+        videoInfo = await youtube.videos.list({
+            key: apiKey,
+            part: ['snippet','contentDetails'],
+            id: [id],
+        });
+    } catch (err) {
+        console.error(err);
+    }
+
+    const firstResult = videoInfo.data.items[0];
+    return new Song(firstResult.snippet.title, prependURL+firstResult.id, firstResult.contentDetails.duration, firstResult.snippet.thumbnails.medium.url)
 }
 
 export async function getSongs(url: string) {
     if(url.includes('/playlist?list=')){
         let playlistId = url.split('/playlist?list=')[1];
         playlistId = playlistId.split('&')[0];
-        return getPlaylist(playlistId, "first");
+        if (playlistId == config.playlistId) {
+            console.log('fetching from cache');
+            return cachePlaylist();
+        }
+        return getPlaylist(playlistId);
     }
     return songFromURL(url);
 }
 
+// Utilities
 export function getTimestamp(stream: number, total: string) {
     let ltime = Duration.fromMillis(stream);
     let tTime = Duration.fromISO(total);
     let format: string;
     format = tTime.as('hours') < 1? 'mm:ss' : 'hh:mm:ss';
     return ltime.toFormat(format) + '/' + tTime.toFormat(format);
+}
+
+export async function cachePlaylist(refresh=false) {
+    if (cachedPlaylist.length < 1 || refresh) {
+        console.log("trayendo playlist");
+        let res = await getPlaylist(config.playlistId);
+        if (!(res instanceof Array))
+            res = [res];
+        cachedPlaylist = res;
+    }
+    console.log("playlist guardada, regresando de cache");
+    return cachedPlaylist;
 }

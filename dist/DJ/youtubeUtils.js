@@ -1,4 +1,23 @@
 "use strict";
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -9,16 +28,19 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getTimestamp = exports.getSongs = exports.songFromURL = exports.getSongMetadata = exports.searchYT = exports.getPlaylist = void 0;
+exports.cachePlaylist = exports.getTimestamp = exports.getSongs = exports.searchYT = void 0;
 const googleapis_1 = require("googleapis");
 const musicClasses_1 = require("./musicClasses");
 const luxon_1 = require("luxon");
+const config = __importStar(require("../config.json"));
 const youtube = googleapis_1.google.youtube('v3');
 const apiKey = process.env.YT_API_KEY;
 const prependURL = 'https://www.youtube.com/watch?v=';
 const regexURL = /^.*((youtu.be\/)|(v\/)|(\/u\/\w\/)|(embed\/)|(watch\?))\??v?=?([^#&?]*).*/;
-function getPlaylist(playlist, nextPageToken) {
+let cachedPlaylist = [];
+function getPlaylistRec(playlist, nextPageToken) {
     return __awaiter(this, void 0, void 0, function* () {
+        console.log(nextPageToken);
         // check pagination for really long playlists
         if (!nextPageToken)
             return Array();
@@ -48,33 +70,14 @@ function getPlaylist(playlist, nextPageToken) {
         let songs = videoInfo.data.items.map(item => {
             return new musicClasses_1.Song(item.snippet.title, prependURL + item.id, item.contentDetails.duration, item.snippet.thumbnails.medium.url);
         });
-        return songs.concat(yield getPlaylist(playlist, res.data.nextPageToken));
+        return songs.concat(yield getPlaylistRec(playlist, res.data.nextPageToken));
     });
 }
-exports.getPlaylist = getPlaylist;
-function searchYT(keyword) {
+function getPlaylist(playlist) {
     return __awaiter(this, void 0, void 0, function* () {
-        let res = yield youtube.search.list({
-            q: keyword,
-            key: apiKey,
-            part: ['snippet'],
-            safeSearch: "none",
-            maxResults: 1,
-        });
-        if (!res.data.items) {
-            return null;
-        }
-        let id = res.data.items[0].id.videoId;
-        let videoInfo = yield youtube.videos.list({
-            key: apiKey,
-            part: ['snippet', 'contentDetails'],
-            id: [id],
-        });
-        const firstResult = videoInfo.data.items[0];
-        return new musicClasses_1.Song(firstResult.snippet.title, prependURL + firstResult.id, firstResult.contentDetails.duration, firstResult.snippet.thumbnails.medium.url);
+        return getPlaylistRec(playlist, 'first');
     });
 }
-exports.searchYT = searchYT;
 function getSongMetadata(url) {
     return __awaiter(this, void 0, void 0, function* () {
         var match = url.match(regexURL);
@@ -93,7 +96,6 @@ function getSongMetadata(url) {
         return res.data.items[0];
     });
 }
-exports.getSongMetadata = getSongMetadata;
 function songFromURL(url) {
     return __awaiter(this, void 0, void 0, function* () {
         let song = yield getSongMetadata(url);
@@ -101,28 +103,59 @@ function songFromURL(url) {
             return null;
         }
         return new musicClasses_1.Song(song.snippet.title, prependURL + song.id, song.contentDetails.duration, song.snippet.thumbnails.medium.url);
-        /*
-        try {
-            let songInfo = await ytdl.getInfo(url);
-            return new Song(songInfo.title, url, songInfo.length_seconds);
-        } catch (err) {
-            return null;
-        }
-        */
     });
 }
-exports.songFromURL = songFromURL;
+function searchYT(keyword) {
+    return __awaiter(this, void 0, void 0, function* () {
+        let res;
+        try {
+            res = yield youtube.search.list({
+                q: keyword,
+                key: apiKey,
+                part: ['snippet'],
+                safeSearch: "none",
+                maxResults: 1,
+            });
+        }
+        catch (err) {
+            console.error(err);
+        }
+        if (!res.data.items) {
+            return null;
+        }
+        let id = res.data.items[0].id.videoId;
+        let videoInfo;
+        try {
+            videoInfo = yield youtube.videos.list({
+                key: apiKey,
+                part: ['snippet', 'contentDetails'],
+                id: [id],
+            });
+        }
+        catch (err) {
+            console.error(err);
+        }
+        const firstResult = videoInfo.data.items[0];
+        return new musicClasses_1.Song(firstResult.snippet.title, prependURL + firstResult.id, firstResult.contentDetails.duration, firstResult.snippet.thumbnails.medium.url);
+    });
+}
+exports.searchYT = searchYT;
 function getSongs(url) {
     return __awaiter(this, void 0, void 0, function* () {
         if (url.includes('/playlist?list=')) {
             let playlistId = url.split('/playlist?list=')[1];
             playlistId = playlistId.split('&')[0];
-            return getPlaylist(playlistId, "first");
+            if (playlistId == config.playlistId) {
+                console.log('fetching from cache');
+                return cachePlaylist();
+            }
+            return getPlaylist(playlistId);
         }
         return songFromURL(url);
     });
 }
 exports.getSongs = getSongs;
+// Utilities
 function getTimestamp(stream, total) {
     let ltime = luxon_1.Duration.fromMillis(stream);
     let tTime = luxon_1.Duration.fromISO(total);
@@ -131,3 +164,17 @@ function getTimestamp(stream, total) {
     return ltime.toFormat(format) + '/' + tTime.toFormat(format);
 }
 exports.getTimestamp = getTimestamp;
+function cachePlaylist(refresh = false) {
+    return __awaiter(this, void 0, void 0, function* () {
+        if (cachedPlaylist.length < 1 || refresh) {
+            console.log("trayendo playlist");
+            let res = yield getPlaylist(config.playlistId);
+            if (!(res instanceof Array))
+                res = [res];
+            cachedPlaylist = res;
+        }
+        console.log("playlist guardada, regresando de cache");
+        return cachedPlaylist;
+    });
+}
+exports.cachePlaylist = cachePlaylist;
