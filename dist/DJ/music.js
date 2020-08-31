@@ -14,7 +14,7 @@ var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (
 var __importStar = (this && this.__importStar) || function (mod) {
     if (mod && mod.__esModule) return mod;
     var result = {};
-    if (mod != null) for (var k in mod) if (k !== "default" && Object.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
     __setModuleDefault(result, mod);
     return result;
 };
@@ -55,12 +55,12 @@ exports.musicCommands = {
     "np": nowPlaying,
     "loop": loop,
     "playlist": playlist,
-    "pp": preloadPlaylist
+    "pp": preloadPlaylist,
 };
-function preloadPlaylist() {
+function preloadPlaylist(discord_message, args) {
     return __awaiter(this, void 0, void 0, function* () {
         try {
-            yield ytUitls.cachePlaylist();
+            yield ytUitls.cachePlaylist(true);
         }
         catch (err) {
             return `Lmao la cagué: ${err.message}`;
@@ -166,7 +166,8 @@ function playSong(guild, song) {
         serverQueue.textChannel.send(embed);
         playSong(guild, serverQueue.songs[0]);
     });
-    dispatcher.setVolumeLogarithmic(serverQueue.volume / 5);
+    let vol = ytUitls.getVolume(song.url);
+    dispatcher.setVolumeLogarithmic(vol / 5);
 }
 function skip(discord_message, _args) {
     const serverQueue = globalQueues.get(discord_message.guild.id);
@@ -245,8 +246,8 @@ function volume(discord_message, args) {
         if (volume > 10) {
             return "No creo que eso sea una buena idea";
         }
-        serverQueue.volume = volume;
-        serverQueue.connection.dispatcher.setVolumeLogarithmic(serverQueue.volume / 5);
+        ytUitls.setVolume(serverQueue.songs[0].url, volume);
+        serverQueue.connection.dispatcher.setVolumeLogarithmic(volume / 5);
     });
 }
 function nowPlaying(discord_message, _args) {

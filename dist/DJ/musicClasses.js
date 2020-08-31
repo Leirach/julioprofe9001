@@ -16,7 +16,6 @@ class QueueContract {
         this.voiceChannel = voiceChannel;
         this.connection = null;
         this.songs = Array();
-        this.volume = 5;
         this.playing = true;
         this.loop = false;
     }

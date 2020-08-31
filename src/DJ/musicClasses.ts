@@ -6,6 +6,7 @@ export class Song {
     url: string;
     duration: string;
     thumbnail: string;
+    volume: number;
     constructor(title: string = "", url: string, duration: string, thumbnail: string) {
         this.title = title;
         this.url = url;
@@ -19,7 +20,6 @@ export class QueueContract {
     voiceChannel: VoiceChannel;
     connection: VoiceConnection| null;
     songs: Array<Song>;
-    volume: number;
     playing: boolean;
     loop: boolean;
 
@@ -28,7 +28,6 @@ export class QueueContract {
         this.voiceChannel = voiceChannel;
         this.connection = null;
         this.songs = Array<Song>();
-        this.volume = 5;
         this.playing = true;
         this.loop = false;
     }

@@ -2,13 +2,23 @@ import { google } from 'googleapis';
 import { Song } from "./musicClasses";
 import { Duration } from 'luxon';
 import * as config from '../config.json';
+import csvtojson from 'csvtojson';
+import fs, { writev } from 'fs';
+import readline from 'readline';
 
 const youtube = google.youtube('v3');
 const apiKey = process.env.YT_API_KEY;
 const prependURL = 'https://www.youtube.com/watch?v=';
+const volumesCSV = './memes/volumes.csv';
 const regexURL = /^.*((youtu.be\/)|(v\/)|(\/u\/\w\/)|(embed\/)|(watch\?))\??v?=?([^#&?]*).*/
 
 let cachedPlaylist: Song[] = [];
+let volumesFile: number;
+let volumes: any = {};
+readVolumes((data: any) => {
+    volumes = data;
+});
+
 
 async function getPlaylistRec(playlist: string, nextPageToken:string): Promise<Array<Song>> {
     console.log(nextPageToken);
@@ -143,4 +153,48 @@ export async function cachePlaylist(refresh=false) {
     }
     console.log("playlist guardada, regresando de cache");
     return cachedPlaylist;
+}
+
+export function readVolumes(callback: Function) {
+    console.log("reading volumes csv");
+    let stream: fs.ReadStream;
+    stream = fs.createReadStream(volumesCSV).on('error', (err: Error) => {
+        fs.closeSync(fs.openSync('volumes.csv', 'w'));
+    });
+    var lineReader = readline.createInterface({
+        input: stream
+    });
+    lineReader.on('line', (str: string) => {
+        // console.log('Line from file:', str);
+        let line = str.split(',');
+        volumes[line[0]] = parseInt(line[1]);
+    });
+    stream.once('end', () => {
+        stream.close();
+        writeVolumes();
+        volumesFile = fs.openSync(volumesCSV, 'a');
+    });
+}
+
+function writeVolumes() {
+    var file = fs.createWriteStream(volumesCSV);
+    file.on('error', function(err) { 
+        console.error("Can't write");
+     });
+    Object.keys(volumes).forEach( (url: string) => {
+        file.write(`${url},${volumes[url]}\n`);
+    });
+    file.end();
+}
+
+export function getVolume(url: string){
+    let vol = volumes[url] || 5;
+    return vol;
+}
+
+export function setVolume(url: string, volume: number){ 
+    if (!volumes[url]){
+        volumes[url] = volume;
+    }
+    fs.appendFileSync(volumesFile, `${url},${volume}\n`);
 }

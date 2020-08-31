@@ -8,7 +8,6 @@ import { replies } from "../replies";
 
 const bufferSize = 1<<25;
 
-
 let globalQueues = new Collection<string, QueueContract>();
 
 type FunctionDictionary = { [key: string]: Function };
@@ -27,12 +26,12 @@ export let musicCommands: FunctionDictionary = {
     "np": nowPlaying,
     "loop": loop,
     "playlist": playlist,
-    "pp": preloadPlaylist
+    "pp": preloadPlaylist,
 }
 
-async function preloadPlaylist() {
+async function preloadPlaylist(discord_message: Message, args: string[]) {
     try {
-        await ytUitls.cachePlaylist();
+        await ytUitls.cachePlaylist(true);
     } catch (err) {
         return `Lmao la cagué: ${err.message}`;
     }
@@ -141,7 +140,8 @@ function playSong(guild: Guild, song: any) {
         serverQueue.textChannel.send(embed);
         playSong(guild, serverQueue.songs[0]);
     });
-    dispatcher.setVolumeLogarithmic(serverQueue.volume / 5);
+    let vol = ytUitls.getVolume(song.url);
+    dispatcher.setVolumeLogarithmic(vol / 5);
 }
 
 function skip(discord_message: Message, _args: string[]) {
@@ -222,8 +222,8 @@ async function volume(discord_message: Message, args: string[]) {
     if (volume > 10) {
         return "No creo que eso sea una buena idea";
     }
-    serverQueue.volume = volume;
-    serverQueue.connection.dispatcher.setVolumeLogarithmic(serverQueue.volume / 5);
+    ytUitls.setVolume(serverQueue.songs[0].url, volume);
+    serverQueue.connection.dispatcher.setVolumeLogarithmic(volume / 5);
 }
 
 async function nowPlaying(discord_message: Message, _args: string[]) {

@@ -14,7 +14,7 @@ var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (
 var __importStar = (this && this.__importStar) || function (mod) {
     if (mod && mod.__esModule) return mod;
     var result = {};
-    if (mod != null) for (var k in mod) if (k !== "default" && Object.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
     __setModuleDefault(result, mod);
     return result;
 };
@@ -27,17 +27,28 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.cachePlaylist = exports.getTimestamp = exports.getSongs = exports.searchYT = void 0;
+exports.setVolume = exports.getVolume = exports.readVolumes = exports.cachePlaylist = exports.getTimestamp = exports.getSongs = exports.searchYT = void 0;
 const googleapis_1 = require("googleapis");
 const musicClasses_1 = require("./musicClasses");
 const luxon_1 = require("luxon");
 const config = __importStar(require("../config.json"));
+const fs_1 = __importDefault(require("fs"));
+const readline_1 = __importDefault(require("readline"));
 const youtube = googleapis_1.google.youtube('v3');
 const apiKey = process.env.YT_API_KEY;
 const prependURL = 'https://www.youtube.com/watch?v=';
+const volumesCSV = './memes/volumes.csv';
 const regexURL = /^.*((youtu.be\/)|(v\/)|(\/u\/\w\/)|(embed\/)|(watch\?))\??v?=?([^#&?]*).*/;
 let cachedPlaylist = [];
+let volumesFile;
+let volumes = {};
+readVolumes((data) => {
+    volumes = data;
+});
 function getPlaylistRec(playlist, nextPageToken) {
     return __awaiter(this, void 0, void 0, function* () {
         console.log(nextPageToken);
@@ -178,3 +189,46 @@ function cachePlaylist(refresh = false) {
     });
 }
 exports.cachePlaylist = cachePlaylist;
+function readVolumes(callback) {
+    console.log("reading volumes csv");
+    let stream;
+    stream = fs_1.default.createReadStream(volumesCSV).on('error', (err) => {
+        fs_1.default.closeSync(fs_1.default.openSync('volumes.csv', 'w'));
+    });
+    var lineReader = readline_1.default.createInterface({
+        input: stream
+    });
+    lineReader.on('line', (str) => {
+        // console.log('Line from file:', str);
+        let line = str.split(',');
+        volumes[line[0]] = parseInt(line[1]);
+    });
+    stream.once('end', () => {
+        stream.close();
+        writeVolumes();
+        volumesFile = fs_1.default.openSync(volumesCSV, 'a');
+    });
+}
+exports.readVolumes = readVolumes;
+function writeVolumes() {
+    var file = fs_1.default.createWriteStream(volumesCSV);
+    file.on('error', function (err) {
+        console.error("Can't write");
+    });
+    Object.keys(volumes).forEach((url) => {
+        file.write(`${url},${volumes[url]}\n`);
+    });
+    file.end();
+}
+function getVolume(url) {
+    let vol = volumes[url] || 5;
+    return vol;
+}
+exports.getVolume = getVolume;
+function setVolume(url, volume) {
+    if (!volumes[url]) {
+        volumes[url] = volume;
+    }
+    fs_1.default.appendFileSync(volumesFile, `${url},${volume}\n`);
+}
+exports.setVolume = setVolume;
