@@ -193,8 +193,6 @@ export function getVolume(url: string){
 }
 
 export function setVolume(url: string, volume: number){ 
-    if (!volumes[url]){
-        volumes[url] = volume;
-    }
+    volumes[url] = volume;
     fs.appendFileSync(volumesFile, `${url},${volume}\n`);
 }
