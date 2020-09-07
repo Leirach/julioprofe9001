@@ -238,6 +238,9 @@ function volume(discord_message, args) {
         let serverQueue = globalQueues.get(discord_message.guild.id);
         if (!(serverQueue === null || serverQueue === void 0 ? void 0 : serverQueue.songs))
             return "No hay ni madres aquí";
+        if (!args[0]) {
+            return `Volume: ${ytUitls.getVolume(serverQueue.songs[0].url)}`;
+        }
         let volume = parseInt(args[0]);
         if (isNaN(volume))
             return "No mames eso no es un número";

@@ -44,8 +44,8 @@ async function playlist(discord_message: Message, args: string[]) {
 
 /**
  * Plays music!
- * @param discord_message 
- * @param args 
+ * @param discord_message
+ * @param args
  */
 async function play(discord_message: Message, args: string[]) {
     const voiceChannel = discord_message.member.voice.channel;
@@ -189,6 +189,7 @@ async function playtop(discord_message: Message, args: string[]) {
     return "Yastas";
 }
 
+//TODO: bug playskip without arguments and without queue
 async function playskip(discord_message: Message, args: string[]) {
     const serverQueue = globalQueues.get(discord_message.guild.id);
     let reply = await playtop(discord_message, args);
@@ -213,7 +214,11 @@ async function volume(discord_message: Message, args: string[]) {
     let serverQueue = globalQueues.get(discord_message.guild.id);
     if (!serverQueue?.songs)
         return "No hay ni madres aquí";
-    
+
+    if (!args[0]) {
+        return `Volume: ${ytUitls.getVolume(serverQueue.songs[0].url)}`
+    }
+
     let volume = parseInt(args[0]);
     if(isNaN(volume))
         return "No mames eso no es un número";
@@ -276,6 +281,6 @@ async function loop(discord_message: Message, args: string[]) {
     serverQueue.loop = !serverQueue.loop;
     if (serverQueue.loop)
         return "Loop-the-loop";
-    else 
+    else
         return "No more loop"
 }
