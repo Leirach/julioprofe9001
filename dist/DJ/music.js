@@ -213,6 +213,7 @@ function playtop(discord_message, args) {
         return "Yastas";
     });
 }
+//TODO: bug playskip without arguments and without queue
 function playskip(discord_message, args) {
     return __awaiter(this, void 0, void 0, function* () {
         const serverQueue = globalQueues.get(discord_message.guild.id);
