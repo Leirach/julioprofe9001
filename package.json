@@ -21,7 +21,7 @@
     "fluent-ffmpeg": "^2.1.2",
     "googleapis": "^61.0.0",
     "luxon": "^1.25.0",
-    "node": "^15.0.1",
+    "node": "^12.19.0",
     "nodemon": "^2.0.6",
     "ytdl-core": "^3.4.2"
   },
