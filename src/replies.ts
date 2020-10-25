@@ -42,7 +42,7 @@ export const replies: any = {
         "esa parece una pregunta para el mago anal",
         "ahuevo wey",
         "no uwu",
-        "sí uwu", 
+        "sí uwu",
         "OwO"
     ],
     cumbia: [
@@ -90,6 +90,16 @@ export let reactions = [
             "hentai",
             "porn",
             "me vine"
+        ]
+    },
+    {
+        "emoji": "769719880983248916",
+        "triggers": [
+            "sanes",
+            "sans",
+            "megalo",
+            "mogolo",
+            "bad time"
         ]
     }
 ]
