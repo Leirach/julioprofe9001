@@ -14,7 +14,7 @@ var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (
 var __importStar = (this && this.__importStar) || function (mod) {
     if (mod && mod.__esModule) return mod;
     var result = {};
-    if (mod != null) for (var k in mod) if (k !== "default" && Object.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
     __setModuleDefault(result, mod);
     return result;
 };
@@ -89,15 +89,18 @@ function play(discord_message, args) {
         }
         // tries to parse url
         let result;
+        let sendEmbed;
         if (utilities_1.isURL(args[0])) {
             //console.log(`getting from url ${args[0]}`);
             result = yield ytUitls.getSongs(args[0]);
+            sendEmbed = false;
         }
         else {
             if (!args.join(' ')) {
                 return "Tocame esta XD";
             }
             result = yield ytUitls.searchYT(args.join(' '));
+            sendEmbed = true;
         }
         //if a queueContract already exists (bot is already playing a song)
         // push a song in the array and return confirmation message
@@ -106,7 +109,7 @@ function play(discord_message, args) {
             // if its a song push it, otherwise concat the whole fucking array
             if (result instanceof musicClasses_1.Song) {
                 serverQueue.songs.push(result);
-                return `**${result.title}** agregado a la playlist`;
+                return sendEmbed ? ytUitls.songEmbed("Agregado", result, 0) : "Yastas";
             }
             else {
                 serverQueue.songs = serverQueue.songs.concat(result);
@@ -126,7 +129,9 @@ function play(discord_message, args) {
         }
         // console.log(serverQueue.songs[0]);
         try {
-            serverQueue.textChannel.send(`Tocando **${serverQueue.songs[0].title}**`);
+            const song = serverQueue.songs[0];
+            let msg = sendEmbed ? ytUitls.songEmbed("Now Playing", song, 0) : `Now playing: ${song.title}`;
+            serverQueue.textChannel.send(msg);
             serverQueue.connection = yield voiceChannel.join();
             playSong(discord_message.guild, serverQueue.songs[0]);
         }
@@ -175,9 +180,10 @@ function skip(discord_message, _args) {
         return "Ni estoy tocando música";
     if (!discord_message.member.voice.channel)
         return "No mames, ni la estás oyendo";
+    const looping = serverQueue.loop;
     serverQueue.loop = false;
     serverQueue.connection.dispatcher.end();
-    serverQueue.loop = serverQueue.loop;
+    serverQueue.loop = looping;
 }
 function stop(discord_message, _args) {
     const serverQueue = globalQueues.get(discord_message.guild.id);
@@ -188,37 +194,49 @@ function stop(discord_message, _args) {
     serverQueue.songs = [];
     serverQueue.connection.dispatcher.end();
 }
-function playtop(discord_message, args) {
+function playtop(discord_message, args, status) {
     return __awaiter(this, void 0, void 0, function* () {
         const serverQueue = globalQueues.get(discord_message.guild.id);
-        if (!serverQueue)
+        if (!status)
+            status = { ok: false };
+        if (!serverQueue) {
+            status.ok = false;
             return play(discord_message, args);
-        // tries to parse url
+        }
         let result;
+        let msg;
         if (utilities_1.isURL(args[0])) {
             // console.log(`getting from url ${args[0]}`);
             result = yield ytUitls.getSongs(args[0]);
+            msg = "Yastas";
+            status.ok = true;
         }
         else {
             if (!args.join(' ')) {
+                status.ok = false;
                 return "Tocame esta XD";
             }
             // console.log(`searching for ${args.join(' ')}`)
             result = yield ytUitls.searchYT(args.join(' '));
+            msg = ytUitls.songEmbed("Sigue", result, 0);
+            status.ok = true;
         }
         if (!(result instanceof musicClasses_1.Song)) {
-            return "Nel, no pude hacer eso";
+            status.ok = false;
+            return "Nel, no puedo agregar playlists";
         }
         serverQueue.songs.splice(1, 0, result);
-        return "Yastas";
+        status.ok = true;
+        return msg;
     });
 }
 //TODO: bug playskip without arguments and without queue
 function playskip(discord_message, args) {
     return __awaiter(this, void 0, void 0, function* () {
         const serverQueue = globalQueues.get(discord_message.guild.id);
-        let reply = yield playtop(discord_message, args);
-        if (reply = "Yastas") {
+        let status = { ok: false };
+        let reply = yield playtop(discord_message, args, status);
+        if (status.ok) {
             serverQueue.connection.dispatcher.end();
         }
         return reply;
@@ -263,15 +281,7 @@ function nowPlaying(discord_message, _args) {
         const np = serverQueue.songs[0];
         // get time and format it accordingly
         let time = serverQueue.connection.dispatcher.streamTime;
-        const timestamp = ytUitls.getTimestamp(time, np.duration);
-        let embed = new discord_js_1.MessageEmbed()
-            .setAuthor("Now playing:", config.avatarUrl)
-            .setTitle(np.title)
-            .setURL(np.url)
-            .setThumbnail(config.avatarUrl)
-            .setDescription(`${timestamp}`)
-            .setImage(np.thumbnail);
-        return embed;
+        return ytUitls.songEmbed("Now playing", np, time);
     });
 }
 function queue(discord_message, _args) {

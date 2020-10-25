@@ -17,6 +17,7 @@ export const replies: any = {
         "furro": "OwO",
         "furry": "OwO",
         "nigger": "That's racist you can't say the n-word!",
+        "niggers": "That's racist you can't say the n-word!",
         "epic": "epic bad"
     },
     oraculo: [
@@ -46,25 +47,12 @@ export const replies: any = {
         "OwO"
     ],
     cumbia: [
+        "Rythm me la pela",
+        "te equivocaste, es &play",
+        "Rythm es joto",
         "oi nomas ese cumbion",
         "UUEUADUDUWADUWA",
         "SANESS, YOU WANNA HAVE A BAD TOM???"
-    ],
-    reactions: [
-        {
-            "emoji": "435297735919403008",
-            "triggers": [
-                "jaja",
-                "xd",
-                "lmao"
-            ]
-        },
-        {
-            "emoji": "👌",
-            "triggers": [
-                "👌"
-            ]
-        }
     ]
 }
 
@@ -74,7 +62,8 @@ export let reactions = [
         "triggers": [
             "jaja",
             "xd",
-            "lmao"
+            "lmao",
+            "haha"
         ]
     },
     {
@@ -88,7 +77,7 @@ export let reactions = [
         "triggers": [
             "😩",
             "hentai",
-            "porn",
+            "porno",
             "me vine"
         ]
     },
@@ -114,9 +103,9 @@ export const musicPlay = [
 
     "Apoco les gusta esta basura",
     "Nmms qué asco",
-    "Wakala, pero bueno",
+    "Wakala",
     "&skip lmao",
-    "Mejor pongan Megalovania",
+    "Mejor pongan megalos",
 
     "Never gonna give you up",
     "Te la voy a tocar",

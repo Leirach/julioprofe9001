@@ -1,4 +1,4 @@
-import { Message, VoiceConnection, TextChannel, VoiceChannel, DMChannel, 
+import { Message, VoiceConnection, TextChannel, VoiceChannel, DMChannel,
          NewsChannel, Collection} from "discord.js";
 
 export class Song {
@@ -7,11 +7,13 @@ export class Song {
     duration: string;
     thumbnail: string;
     volume: number;
-    constructor(title: string = "", url: string, duration: string, thumbnail: string) {
+    author: string;
+    constructor(title: string = "", url: string, duration: string, thumbnail: string, author: string) {
         this.title = title;
         this.url = url;
         this.duration = duration;
         this.thumbnail = thumbnail;
+        this.author = author;
     }
 }
 

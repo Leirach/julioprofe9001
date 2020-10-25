@@ -81,7 +81,6 @@ function react(discord_message) {
     replies_1.reactions.forEach(reaction => {
         reaction.triggers.forEach((trigger) => __awaiter(this, void 0, void 0, function* () {
             if (message.includes(trigger)) {
-                console.log(trigger);
                 yield discord_message.react(reaction.emoji);
             }
         }));

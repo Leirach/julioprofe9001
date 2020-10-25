@@ -19,6 +19,7 @@ exports.replies = {
         "furro": "OwO",
         "furry": "OwO",
         "nigger": "That's racist you can't say the n-word!",
+        "niggers": "That's racist you can't say the n-word!",
         "epic": "epic bad"
     },
     oraculo: [
@@ -48,25 +49,12 @@ exports.replies = {
         "OwO"
     ],
     cumbia: [
+        "Rythm me la pela",
+        "te equivocaste, es &play",
+        "Rythm es joto",
         "oi nomas ese cumbion",
         "UUEUADUDUWADUWA",
         "SANESS, YOU WANNA HAVE A BAD TOM???"
-    ],
-    reactions: [
-        {
-            "emoji": "435297735919403008",
-            "triggers": [
-                "jaja",
-                "xd",
-                "lmao"
-            ]
-        },
-        {
-            "emoji": "👌",
-            "triggers": [
-                "👌"
-            ]
-        }
     ]
 };
 exports.reactions = [
@@ -75,7 +63,8 @@ exports.reactions = [
         "triggers": [
             "jaja",
             "xd",
-            "lmao"
+            "lmao",
+            "haha"
         ]
     },
     {
@@ -89,7 +78,7 @@ exports.reactions = [
         "triggers": [
             "😩",
             "hentai",
-            "porn",
+            "porno",
             "me vine"
         ]
     },
@@ -113,9 +102,9 @@ exports.musicPlay = [
     "&loop jkjk unless...",
     "Apoco les gusta esta basura",
     "Nmms qué asco",
-    "Wakala, pero bueno",
+    "Wakala",
     "&skip lmao",
-    "Mejor pongan Megalovania",
+    "Mejor pongan megalos",
     "Never gonna give you up",
     "Te la voy a tocar",
     "Dime donde te la toco",

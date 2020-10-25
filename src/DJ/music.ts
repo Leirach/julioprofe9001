@@ -58,15 +58,18 @@ async function play(discord_message: Message, args: string[]) {
 
     // tries to parse url
     let result;
+    let sendEmbed: boolean;
     if ( isURL(args[0]) ) {
         //console.log(`getting from url ${args[0]}`);
         result = await ytUitls.getSongs(args[0]);
+        sendEmbed = false;
     }
     else {
         if (!args.join(' ')){
             return "Tocame esta XD";
         }
         result = await ytUitls.searchYT(args.join(' '))
+        sendEmbed = true;
     }
 
     //if a queueContract already exists (bot is already playing a song)
@@ -76,7 +79,7 @@ async function play(discord_message: Message, args: string[]) {
         // if its a song push it, otherwise concat the whole fucking array
         if (result instanceof Song){
             serverQueue.songs.push(result);
-            return `**${result.title}** agregado a la playlist`;
+            return sendEmbed? ytUitls.songEmbed("Agregado", result, 0) : "Yastas";
         }
         else {
             serverQueue.songs = serverQueue.songs.concat(result);
@@ -99,7 +102,9 @@ async function play(discord_message: Message, args: string[]) {
 
     // console.log(serverQueue.songs[0]);
     try {
-        serverQueue.textChannel.send(`Tocando **${serverQueue.songs[0].title}**`)
+        const song = serverQueue.songs[0];
+        let msg = sendEmbed? ytUitls.songEmbed("Now Playing", song, 0) : `Now playing: ${song.title}`;
+        serverQueue.textChannel.send(msg);
         serverQueue.connection = await voiceChannel.join();
         playSong(discord_message.guild, serverQueue.songs[0]);
     } catch (err) {
@@ -150,9 +155,10 @@ function skip(discord_message: Message, _args: string[]) {
         return "Ni estoy tocando música";
     if (!discord_message.member.voice.channel)
         return "No mames, ni la estás oyendo";
+    const looping = serverQueue.loop;
     serverQueue.loop = false;
     serverQueue.connection.dispatcher.end();
-    serverQueue.loop = serverQueue.loop;
+    serverQueue.loop = looping;
 }
 
 function stop(discord_message: Message, _args: string[]) {
@@ -165,35 +171,46 @@ function stop(discord_message: Message, _args: string[]) {
     serverQueue.connection.dispatcher.end();
 }
 
-async function playtop(discord_message: Message, args: string[]) {
+async function playtop(discord_message: Message, args: string[], status?: {ok: Boolean}) {
     const serverQueue = globalQueues.get(discord_message.guild.id);
-    if (!serverQueue)
+    if (!status) status = {ok: false};
+    if (!serverQueue){
+        status.ok = false;
         return play(discord_message, args);
-        // tries to parse url
+    }
     let result;
+    let msg;
     if ( isURL(args[0]) ) {
         // console.log(`getting from url ${args[0]}`);
         result = await ytUitls.getSongs(args[0]);
+        msg = "Yastas";
+        status.ok = true;
     }
     else {
         if (!args.join(' ')){
+            status.ok = false;
             return "Tocame esta XD";
         }
         // console.log(`searching for ${args.join(' ')}`)
-        result = await ytUitls.searchYT(args.join(' '))
+        result = await ytUitls.searchYT(args.join(' '));
+        msg = ytUitls.songEmbed("Sigue", result, 0);
+        status.ok = true;
     }
     if(!(result instanceof Song)) {
-        return "Nel, no pude hacer eso";
+        status.ok = false;
+        return "Nel, no puedo agregar playlists";
     }
     serverQueue.songs.splice(1, 0, result);
-    return "Yastas";
+    status.ok = true;
+    return msg;
 }
 
 //TODO: bug playskip without arguments and without queue
 async function playskip(discord_message: Message, args: string[]) {
     const serverQueue = globalQueues.get(discord_message.guild.id);
-    let reply = await playtop(discord_message, args);
-    if (reply = "Yastas") {
+    let status = {ok: false};
+    let reply = await playtop(discord_message, args, status);
+    if (status.ok) {
         serverQueue.connection.dispatcher.end();
     }
     return reply;
@@ -240,16 +257,7 @@ async function nowPlaying(discord_message: Message, _args: string[]) {
     const np = serverQueue.songs[0];
     // get time and format it accordingly
     let time = serverQueue.connection.dispatcher.streamTime;
-    const timestamp = ytUitls.getTimestamp(time, np.duration);
-
-    let embed = new MessageEmbed()
-        .setAuthor("Now playing:", config.avatarUrl)
-        .setTitle(np.title)
-        .setURL(np.url)
-        .setThumbnail(config.avatarUrl)
-        .setDescription(`${timestamp}`)
-        .setImage(np.thumbnail);
-    return embed;
+    return ytUitls.songEmbed("Now playing", np, time);
 }
 
 async function queue(discord_message: Message, _args: string[]) {

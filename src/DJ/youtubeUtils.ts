@@ -5,6 +5,7 @@ import * as config from '../config.json';
 import csvtojson from 'csvtojson';
 import fs, { writev } from 'fs';
 import readline from 'readline';
+import { MessageEmbed } from 'discord.js';
 
 const youtube = google.youtube('v3');
 const apiKey = process.env.YT_API_KEY;
@@ -19,7 +20,8 @@ readVolumes((data: any) => {
     volumes = data;
 });
 
-
+// recursive method to get a playlist
+// it's kinda slow...
 async function getPlaylistRec(playlist: string, nextPageToken:string): Promise<Array<Song>> {
     console.log(nextPageToken);
     // check pagination for really long playlists
@@ -43,7 +45,7 @@ async function getPlaylistRec(playlist: string, nextPageToken:string): Promise<A
     let videoIds = res.data.items.map(item => {
         return item.snippet.resourceId.videoId;
     });
-    
+
     // This nasty ass bottleneck will stop the thread for ~500 ms every 50 songs in a playlist
     // I should probably do something about it
     let videoInfo = await youtube.videos.list({
@@ -53,7 +55,11 @@ async function getPlaylistRec(playlist: string, nextPageToken:string): Promise<A
     });
 
     let songs = videoInfo.data.items.map(item => {
-        return new Song(item.snippet.title,  prependURL+item.id, item.contentDetails.duration, item.snippet.thumbnails.medium.url);
+        return new Song(item.snippet.title,
+                        prependURL+item.id,
+                        item.contentDetails.duration,
+                        item.snippet.thumbnails.medium.url,
+                        item.snippet.channelTitle);
     });
 
     return songs.concat(await getPlaylistRec(playlist, res.data.nextPageToken));
@@ -85,7 +91,11 @@ async function songFromURL(url: string) {
     if (!song) {
         return null;
     }
-    return new Song(song.snippet.title, prependURL+song.id, song.contentDetails.duration, song.snippet.thumbnails.medium.url);
+    return new Song(song.snippet.title,
+                    prependURL+song.id,
+                    song.contentDetails.duration,
+                    song.snippet.thumbnails.medium.url,
+                    song.snippet.channelTitle);
 }
 
 export async function searchYT(keyword: string){
@@ -118,7 +128,11 @@ export async function searchYT(keyword: string){
     }
 
     const firstResult = videoInfo.data.items[0];
-    return new Song(firstResult.snippet.title, prependURL+firstResult.id, firstResult.contentDetails.duration, firstResult.snippet.thumbnails.medium.url)
+    return new Song(firstResult.snippet.title,
+                    prependURL+firstResult.id,
+                    firstResult.contentDetails.duration,
+                    firstResult.snippet.thumbnails.medium.url,
+                    firstResult.snippet.channelTitle)
 }
 
 export async function getSongs(url: string) {
@@ -135,12 +149,30 @@ export async function getSongs(url: string) {
 }
 
 // Utilities
+export function songEmbed(title: string, song: Song, streamTime: number) {
+    let ltime = Duration.fromMillis(streamTime);
+    let tTime = Duration.fromISO(song.duration);
+    let format = tTime.as('hours') < 1? 'mm:ss' : 'hh:mm:ss';
+    let timestamp: string;
+    if (streamTime > 0){
+        timestamp = ltime.toFormat(format) + '/' + tTime.toFormat(format);
+    }
+    else {
+        timestamp = tTime.toFormat(format);
+    }
+
+    let embed = new MessageEmbed()
+        .setAuthor(`${title}:`, config.avatarUrl)
+        .setTitle(song.title)
+        .setURL(song.url)
+        .setThumbnail(config.avatarUrl)
+        .addField(song.author, timestamp)
+        .setImage(song.thumbnail);
+    return embed;
+}
+
 export function getTimestamp(stream: number, total: string) {
-    let ltime = Duration.fromMillis(stream);
-    let tTime = Duration.fromISO(total);
-    let format: string;
-    format = tTime.as('hours') < 1? 'mm:ss' : 'hh:mm:ss';
-    return ltime.toFormat(format) + '/' + tTime.toFormat(format);
+
 }
 
 export async function cachePlaylist(refresh=false) {
@@ -178,7 +210,7 @@ export function readVolumes(callback: Function) {
 
 function writeVolumes() {
     var file = fs.createWriteStream(volumesCSV);
-    file.on('error', function(err) { 
+    file.on('error', function(err) {
         console.error("Can't write");
      });
     Object.keys(volumes).forEach( (url: string) => {
@@ -192,7 +224,7 @@ export function getVolume(url: string){
     return vol;
 }
 
-export function setVolume(url: string, volume: number){ 
+export function setVolume(url: string, volume: number){
     volumes[url] = volume;
     fs.appendFileSync(volumesFile, `${url},${volume}\n`);
 }

@@ -14,7 +14,7 @@ var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (
 var __importStar = (this && this.__importStar) || function (mod) {
     if (mod && mod.__esModule) return mod;
     var result = {};
-    if (mod != null) for (var k in mod) if (k !== "default" && Object.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
     __setModuleDefault(result, mod);
     return result;
 };
@@ -31,13 +31,14 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.setVolume = exports.getVolume = exports.readVolumes = exports.cachePlaylist = exports.getTimestamp = exports.getSongs = exports.searchYT = void 0;
+exports.setVolume = exports.getVolume = exports.readVolumes = exports.cachePlaylist = exports.getTimestamp = exports.songEmbed = exports.getSongs = exports.searchYT = void 0;
 const googleapis_1 = require("googleapis");
 const musicClasses_1 = require("./musicClasses");
 const luxon_1 = require("luxon");
 const config = __importStar(require("../config.json"));
 const fs_1 = __importDefault(require("fs"));
 const readline_1 = __importDefault(require("readline"));
+const discord_js_1 = require("discord.js");
 const youtube = googleapis_1.google.youtube('v3');
 const apiKey = process.env.YT_API_KEY;
 const prependURL = 'https://www.youtube.com/watch?v=';
@@ -49,6 +50,8 @@ let volumes = {};
 readVolumes((data) => {
     volumes = data;
 });
+// recursive method to get a playlist
+// it's kinda slow...
 function getPlaylistRec(playlist, nextPageToken) {
     return __awaiter(this, void 0, void 0, function* () {
         console.log(nextPageToken);
@@ -79,7 +82,7 @@ function getPlaylistRec(playlist, nextPageToken) {
             id: videoIds,
         });
         let songs = videoInfo.data.items.map(item => {
-            return new musicClasses_1.Song(item.snippet.title, prependURL + item.id, item.contentDetails.duration, item.snippet.thumbnails.medium.url);
+            return new musicClasses_1.Song(item.snippet.title, prependURL + item.id, item.contentDetails.duration, item.snippet.thumbnails.medium.url, item.snippet.channelTitle);
         });
         return songs.concat(yield getPlaylistRec(playlist, res.data.nextPageToken));
     });
@@ -113,7 +116,7 @@ function songFromURL(url) {
         if (!song) {
             return null;
         }
-        return new musicClasses_1.Song(song.snippet.title, prependURL + song.id, song.contentDetails.duration, song.snippet.thumbnails.medium.url);
+        return new musicClasses_1.Song(song.snippet.title, prependURL + song.id, song.contentDetails.duration, song.snippet.thumbnails.medium.url, song.snippet.channelTitle);
     });
 }
 function searchYT(keyword) {
@@ -147,7 +150,7 @@ function searchYT(keyword) {
             console.error(err);
         }
         const firstResult = videoInfo.data.items[0];
-        return new musicClasses_1.Song(firstResult.snippet.title, prependURL + firstResult.id, firstResult.contentDetails.duration, firstResult.snippet.thumbnails.medium.url);
+        return new musicClasses_1.Song(firstResult.snippet.title, prependURL + firstResult.id, firstResult.contentDetails.duration, firstResult.snippet.thumbnails.medium.url, firstResult.snippet.channelTitle);
     });
 }
 exports.searchYT = searchYT;
@@ -167,12 +170,28 @@ function getSongs(url) {
 }
 exports.getSongs = getSongs;
 // Utilities
+function songEmbed(title, song, streamTime) {
+    let ltime = luxon_1.Duration.fromMillis(streamTime);
+    let tTime = luxon_1.Duration.fromISO(song.duration);
+    let format = tTime.as('hours') < 1 ? 'mm:ss' : 'hh:mm:ss';
+    let timestamp;
+    if (streamTime > 0) {
+        timestamp = ltime.toFormat(format) + '/' + tTime.toFormat(format);
+    }
+    else {
+        timestamp = tTime.toFormat(format);
+    }
+    let embed = new discord_js_1.MessageEmbed()
+        .setAuthor(`${title}:`, config.avatarUrl)
+        .setTitle(song.title)
+        .setURL(song.url)
+        .setThumbnail(config.avatarUrl)
+        .addField(song.author, timestamp)
+        .setImage(song.thumbnail);
+    return embed;
+}
+exports.songEmbed = songEmbed;
 function getTimestamp(stream, total) {
-    let ltime = luxon_1.Duration.fromMillis(stream);
-    let tTime = luxon_1.Duration.fromISO(total);
-    let format;
-    format = tTime.as('hours') < 1 ? 'mm:ss' : 'hh:mm:ss';
-    return ltime.toFormat(format) + '/' + tTime.toFormat(format);
 }
 exports.getTimestamp = getTimestamp;
 function cachePlaylist(refresh = false) {
