@@ -92,6 +92,16 @@ exports.reactions = [
             "porn",
             "me vine"
         ]
+    },
+    {
+        "emoji": "769719880983248916",
+        "triggers": [
+            "sanes",
+            "sans",
+            "megalo",
+            "mogolo",
+            "bad time"
+        ]
     }
 ];
 exports.musicPlay = [
