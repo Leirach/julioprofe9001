@@ -187,6 +187,7 @@ function songEmbed(title, song, streamTime) {
         .setURL(song.url)
         .setThumbnail(config.avatarUrl)
         .addField(song.author, timestamp)
+        .addField("Volume:", song.volume)
         .setImage(song.thumbnail);
     return embed;
 }
