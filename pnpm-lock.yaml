@@ -10,7 +10,7 @@ dependencies:
   googleapis: 61.0.0
   luxon: 1.25.0
   nodemon: 2.0.6
-  ytdl-core: 4.2.0
+  ytdl-core: 4.4.1
 devDependencies:
   '@types/csvtojson': 1.1.5
   '@types/d20': 1.4.0
@@ -2075,7 +2075,7 @@ packages:
     dev: false
     resolution:
       integrity: sha512-3wdGidZyq5PB084XLES5TpOSRA3wjXAlIWMhum2kRcv/41Sn2emQ0dycQW4uZXLejwKvg6EsvbdlVL+FYEct7A==
-  /ytdl-core/4.2.0:
+  /ytdl-core/4.4.1:
     dependencies:
       m3u8stream: 0.8.3
       miniget: 4.1.0
@@ -2084,7 +2084,7 @@ packages:
     engines:
       node: '>=10'
     resolution:
-      integrity: sha512-DYXdooKcok4yuAHg6YdcSppGBWleBQ5nwxFDXArLv3Iiu0GcsfDQdJEjz2zm0oHA292mMyaRb17EYGdcU8D3hw==
+      integrity: sha512-VRqJ1pPEfIt7Lja2bKaTRqO47GfVbqhFfKqtmxU5Pp2BM0HUb0gVyf3wL9HlA+Vb4OblXs2MzSqWI8Fi1sSk4Q==
 specifiers:
   '@discordjs/opus': ^0.3.3
   '@types/csvtojson': ^1.1.5
@@ -2104,4 +2104,4 @@ specifiers:
   luxon: ^1.25.0
   nodemon: ^2.0.6
   typescript: ^4.0.3
-  ytdl-core: ^4.2.0
+  ytdl-core: ^4.4.1
