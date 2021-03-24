@@ -80,7 +80,12 @@ function react(discord_message) {
     let message = discord_message.content.toLowerCase();
     replies_1.reactions.forEach(reaction => {
         reaction.triggers.forEach((trigger) => __awaiter(this, void 0, void 0, function* () {
-            if (message.includes(trigger)) {
+            //  original
+            // if (message.includes(trigger)) {
+            //     await discord_message.react(reaction.emoji);
+            // }
+            let regex = new RegExp(trigger);
+            if (regex.test(message)) {
                 yield discord_message.react(reaction.emoji);
             }
         }));

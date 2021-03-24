@@ -68,18 +68,30 @@ exports.reactions = [
         ]
     },
     {
-        "emoji": "👌",
-        "triggers": [
-            "👌"
-        ]
-    },
-    {
         "emoji": "😩",
         "triggers": [
             "😩",
             "hentai",
             "porno",
-            "me vine"
+            "me vine",
+            "(?:[0-9]{1,3}\.){3}[0-9]{1,3}"
+        ]
+    },
+    {
+        "emoji": "👌",
+        "triggers": [
+            "👌",
+            "(?:[0-9]{1,3}\.){3}[0-9]{1,3}"
+        ]
+    },
+    {
+        "emoji": "769719880983248916",
+        "triggers": [
+            "sanes",
+            "sans",
+            "megalo",
+            "mogolo",
+            "bad time"
         ]
     },
     {

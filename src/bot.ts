@@ -73,7 +73,12 @@ function react(discord_message: Message) {
 
     reactions.forEach( reaction => {
         reaction.triggers.forEach(async trigger => {
-            if (message.includes(trigger)) {
+            //  original
+            // if (message.includes(trigger)) {
+            //     await discord_message.react(reaction.emoji);
+            // }
+            let regex = new RegExp(trigger);
+            if ( regex.test(message)) {
                 await discord_message.react(reaction.emoji);
             }
         });

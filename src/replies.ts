@@ -67,18 +67,30 @@ export let reactions = [
         ]
     },
     {
+        "emoji": "😩",
+            "triggers": [
+                "😩",
+                "hentai",
+                "porno",
+                "me vine",
+                "(?:[0-9]{1,3}\.){3}[0-9]{1,3}"
+            ]
+    },
+    {
         "emoji": "👌",
         "triggers": [
-            "👌"
+            "👌",
+            "(?:[0-9]{1,3}\.){3}[0-9]{1,3}"
         ]
     },
     {
-    "emoji": "😩",
+        "emoji": "769719880983248916",
         "triggers": [
-            "😩",
-            "hentai",
-            "porno",
-            "me vine"
+            "sanes",
+            "sans",
+            "megalo",
+            "mogolo",
+            "bad time"
         ]
     },
     {
