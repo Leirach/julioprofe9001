@@ -73,14 +73,14 @@ export let reactions = [
             "hentai",
             "porno",
             "me vine",
-            "\\d+\.\\d+\.\\d+\.\\d+"
+            "\\d+\\.\\d+\\.\\d+\\.\\d+"
         ]
     },
     {
         "emoji": "👌",
         "triggers": [
             "👌",
-            "\\d+\.\\d+\.\\d+\.\\d+"
+            "\\d+\\.\\d+\\.\\d+\\.\\d+"
         ]
     },
     {
