@@ -6,7 +6,7 @@
   "scripts": {
     "start": "node dist/index.js",
     "dev": "concurrently --kill-others \"tsc -w\" \"nodemon dist/index.js\"",
-    "compile": "tsc && node dist/index.js"
+    "build": "tsc && node dist/index.js"
   },
   "author": "",
   "license": "ISC",
@@ -22,7 +22,7 @@
     "googleapis": "^61.0.0",
     "luxon": "^1.26.0",
     "nodemon": "^2.0.7",
-    "ytdl-core": "^4.5.0"
+    "ytdl-core": "^4.7.0"
   },
   "devDependencies": {
     "@types/csvtojson": "^1.1.5",

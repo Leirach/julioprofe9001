@@ -102,6 +102,15 @@ export let reactions = [
             "mogolo",
             "bad time"
         ]
+    },
+    {
+        "emoji": "840005765376114699",
+        "triggers": [
+            "sus",
+            "amogus",
+            "amongus",
+            "get out of my head"
+        ]
     }
 ]
 
