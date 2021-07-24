@@ -2,7 +2,7 @@ import dotenv from 'dotenv';
 dotenv.config();
 import express from 'express';
 import path from 'path';
-import {initBot} from './bot'
+import { initBot } from './bot'
 
 // static webpage
 const app = express();

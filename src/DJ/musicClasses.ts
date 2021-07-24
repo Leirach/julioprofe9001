@@ -1,5 +1,7 @@
-import { Message, VoiceConnection, TextChannel, VoiceChannel, DMChannel,
-         NewsChannel, Collection} from "discord.js";
+import {
+    Message, VoiceConnection, TextChannel, VoiceChannel, DMChannel,
+    NewsChannel, Collection
+} from "discord.js";
 
 export class Song {
     title: string;
@@ -20,7 +22,7 @@ export class Song {
 export class QueueContract {
     textChannel: TextChannel | DMChannel | NewsChannel;
     voiceChannel: VoiceChannel;
-    connection: VoiceConnection| null;
+    connection: VoiceConnection | null;
     songs: Array<Song>;
     playing: boolean;
     loop: boolean;

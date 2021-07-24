@@ -70,7 +70,7 @@ function preloadPlaylist(discord_message, args) {
 }
 function playlist(discord_message, args) {
     return __awaiter(this, void 0, void 0, function* () {
-        return yield play(discord_message, [config.playlist]);
+        return yield play(discord_message, [config.playlist], true);
     });
 }
 /**
@@ -78,7 +78,7 @@ function playlist(discord_message, args) {
  * @param discord_message
  * @param args
  */
-function play(discord_message, args) {
+function play(discord_message, args, preshuffle) {
     return __awaiter(this, void 0, void 0, function* () {
         const voiceChannel = discord_message.member.voice.channel;
         if (!voiceChannel)
@@ -91,7 +91,6 @@ function play(discord_message, args) {
         let result;
         let sendEmbed;
         if (utilities_1.isURL(args[0])) {
-            //console.log(`getting from url ${args[0]}`);
             result = yield ytUitls.getSongs(args[0]);
             sendEmbed = false;
         }
@@ -120,14 +119,14 @@ function play(discord_message, args) {
         serverQueue = new musicClasses_1.QueueContract(discord_message, voiceChannel);
         globalQueues.set(discord_message.guild.id, serverQueue);
         if (result instanceof musicClasses_1.Song) {
-            //console.log("pushing song");
             serverQueue.songs.push(result);
         }
         else {
-            //console.log("concatenating playlist");
             serverQueue.songs = serverQueue.songs.concat(result);
         }
-        // console.log(serverQueue.songs[0]);
+        // pre shuffle songs form playlist
+        if (preshuffle)
+            serverQueue.songs = utilities_1.shuffleArray(serverQueue.songs);
         try {
             const song = serverQueue.songs[0];
             let msg = sendEmbed ? ytUitls.songEmbed("Now Playing", song, 0) : `Now playing: ${song.title}`;
@@ -206,7 +205,6 @@ function playtop(discord_message, args, status) {
         let result;
         let msg;
         if (utilities_1.isURL(args[0])) {
-            // console.log(`getting from url ${args[0]}`);
             result = yield ytUitls.getSongs(args[0]);
             msg = "Yastas";
             status.ok = true;
@@ -216,7 +214,6 @@ function playtop(discord_message, args, status) {
                 status.ok = false;
                 return "Tocame esta XD";
             }
-            // console.log(`searching for ${args.join(' ')}`)
             result = yield ytUitls.searchYT(args.join(' '));
             msg = ytUitls.songEmbed("Sigue", result, 0);
             status.ok = true;

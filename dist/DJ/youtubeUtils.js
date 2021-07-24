@@ -61,7 +61,6 @@ function getPlaylistRec(playlist, nextPageToken) {
         if (nextPageToken == 'first')
             nextPageToken = null;
         // get video IDs from playlist
-        // console.log("getting playlist");
         let res = yield youtube.playlistItems.list({
             key: apiKey,
             part: ['snippet'],
@@ -187,7 +186,6 @@ function songEmbed(title, song, streamTime) {
         .setURL(song.url)
         .setThumbnail(config.avatarUrl)
         .addField(song.author, `${timestamp} Volume: ${getVolume(song.url)}`)
-        // .addField("Volume: " + getVolume(song.url), "")
         .setImage(song.thumbnail);
     return embed;
 }
@@ -219,7 +217,6 @@ function readVolumes(callback) {
         input: stream
     });
     lineReader.on('line', (str) => {
-        // console.log('Line from file:', str);
         let line = str.split(',');
         volumes[line[0]] = parseInt(line[1]);
     });

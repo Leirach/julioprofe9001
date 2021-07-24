@@ -6,7 +6,7 @@ export const replies: any = {
         "normies": "Reeeeeeee",
         "kahoot": "yayaya",
         "UVM": "No está jodida",
-        "fu" : "no u",
+        "fu": "no u",
         "autism": "what",
         "lit": ":fire::weary::ok_hand:",
         "raid": "RAID: Shadow Legends",
