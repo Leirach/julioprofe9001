@@ -4,9 +4,8 @@ import { QueueContract, Song } from './musicClasses';
 import * as ytUitls from './youtubeUtils';
 import { isURL, shuffleArray } from "../utilities";
 import * as config from '../config.json'
-import { replies } from "../replies";
 
-const bufferSize = 1<<25;
+const bufferSize = 1 << 25;
 
 let globalQueues = new Collection<string, QueueContract>();
 
@@ -39,7 +38,7 @@ async function preloadPlaylist(discord_message: Message, args: string[]) {
 }
 
 async function playlist(discord_message: Message, args: string[]) {
-    return await play(discord_message, [config.playlist]);
+    return await play(discord_message, [config.playlist], true);
 }
 
 /**
@@ -47,7 +46,7 @@ async function playlist(discord_message: Message, args: string[]) {
  * @param discord_message
  * @param args
  */
-async function play(discord_message: Message, args: string[]) {
+async function play(discord_message: Message, args: string[], preshuffle?: boolean) {
     const voiceChannel = discord_message.member.voice.channel;
     if (!voiceChannel)
         return "No estás conectado en vc";
@@ -59,13 +58,12 @@ async function play(discord_message: Message, args: string[]) {
     // tries to parse url
     let result;
     let sendEmbed: boolean;
-    if ( isURL(args[0]) ) {
-        //console.log(`getting from url ${args[0]}`);
+    if (isURL(args[0])) {
         result = await ytUitls.getSongs(args[0]);
         sendEmbed = false;
     }
     else {
-        if (!args.join(' ')){
+        if (!args.join(' ')) {
             return "Tocame esta XD";
         }
         result = await ytUitls.searchYT(args.join(' '))
@@ -75,11 +73,11 @@ async function play(discord_message: Message, args: string[]) {
     //if a queueContract already exists (bot is already playing a song)
     // push a song in the array and return confirmation message
     let serverQueue = globalQueues.get(discord_message.guild.id);
-    if (serverQueue){
+    if (serverQueue) {
         // if its a song push it, otherwise concat the whole fucking array
-        if (result instanceof Song){
+        if (result instanceof Song) {
             serverQueue.songs.push(result);
-            return sendEmbed? ytUitls.songEmbed("Agregado", result, 0) : "Yastas";
+            return sendEmbed ? ytUitls.songEmbed("Agregado", result, 0) : "Yastas";
         }
         else {
             serverQueue.songs = serverQueue.songs.concat(result);
@@ -91,19 +89,19 @@ async function play(discord_message: Message, args: string[]) {
     serverQueue = new QueueContract(discord_message, voiceChannel);
     globalQueues.set(discord_message.guild.id, serverQueue);
 
-    if (result instanceof Song){
-        //console.log("pushing song");
+    if (result instanceof Song) {
         serverQueue.songs.push(result);
     }
     else {
-        //console.log("concatenating playlist");
         serverQueue.songs = serverQueue.songs.concat(result);
     }
 
-    // console.log(serverQueue.songs[0]);
+    // pre shuffle songs form playlist
+    if (preshuffle) serverQueue.songs = shuffleArray(serverQueue.songs);
+
     try {
         const song = serverQueue.songs[0];
-        let msg = sendEmbed? ytUitls.songEmbed("Now Playing", song, 0) : `Now playing: ${song.title}`;
+        let msg = sendEmbed ? ytUitls.songEmbed("Now Playing", song, 0) : `Now playing: ${song.title}`;
         serverQueue.textChannel.send(msg);
         serverQueue.connection = await voiceChannel.join();
         playSong(discord_message.guild, serverQueue.songs[0]);
@@ -119,32 +117,32 @@ function playSong(guild: Guild, song: any) {
     if (!song) {
         serverQueue.voiceChannel.leave();
         globalQueues.delete(guild.id);
-        return ;
+        return;
     }
 
     const dispatcher = serverQueue.connection
-    .play(
-        ytdl(song.url, {filter: 'audioonly', highWaterMark: bufferSize})
-        // Help, im only supposed to increase this param in ytdl and i dont even know why
-        // { highWaterMark: 1024 * 1024 * 10 } // 10mb buffer, supposedly
-    ).on("finish", () => {
-        if (!serverQueue.loop)
-            serverQueue.songs.shift();
-        playSong(guild, serverQueue.songs[0]);
-    })
-    .on("error", (error: Error) => {
-        console.error(error);
-        let np = serverQueue.songs.shift();
-        let embed = new MessageEmbed()
-            .setAuthor("No se puede reproducir:", config.avatarUrl)
-            .setTitle(np.title)
-            .setURL(np.url)
-            .setDescription(`Razon: ${error.message}`)
-            .setThumbnail(config.errorImg)
-            .setImage(np.thumbnail);
-        serverQueue.textChannel.send(embed);
-        playSong(guild, serverQueue.songs[0]);
-    });
+        .play(
+            ytdl(song.url, { filter: 'audioonly', highWaterMark: bufferSize })
+            // Help, im only supposed to increase this param in ytdl and i dont even know why
+            // { highWaterMark: 1024 * 1024 * 10 } // 10mb buffer, supposedly
+        ).on("finish", () => {
+            if (!serverQueue.loop)
+                serverQueue.songs.shift();
+            playSong(guild, serverQueue.songs[0]);
+        })
+        .on("error", (error: Error) => {
+            console.error(error);
+            let np = serverQueue.songs.shift();
+            let embed = new MessageEmbed()
+                .setAuthor("No se puede reproducir:", config.avatarUrl)
+                .setTitle(np.title)
+                .setURL(np.url)
+                .setDescription(`Razon: ${error.message}`)
+                .setThumbnail(config.errorImg)
+                .setImage(np.thumbnail);
+            serverQueue.textChannel.send(embed);
+            playSong(guild, serverQueue.songs[0]);
+        });
     let vol = ytUitls.getVolume(song.url);
     dispatcher.setVolumeLogarithmic(vol / 5);
 }
@@ -171,32 +169,30 @@ function stop(discord_message: Message, _args: string[]) {
     serverQueue.connection.dispatcher.end();
 }
 
-async function playtop(discord_message: Message, args: string[], status?: {ok: Boolean}) {
+async function playtop(discord_message: Message, args: string[], status?: { ok: Boolean }) {
     const serverQueue = globalQueues.get(discord_message.guild.id);
-    if (!status) status = {ok: false};
-    if (!serverQueue){
+    if (!status) status = { ok: false };
+    if (!serverQueue) {
         status.ok = false;
         return play(discord_message, args);
     }
     let result;
     let msg;
-    if ( isURL(args[0]) ) {
-        // console.log(`getting from url ${args[0]}`);
+    if (isURL(args[0])) {
         result = await ytUitls.getSongs(args[0]);
         msg = "Yastas";
         status.ok = true;
     }
     else {
-        if (!args.join(' ')){
+        if (!args.join(' ')) {
             status.ok = false;
             return "Tocame esta XD";
         }
-        // console.log(`searching for ${args.join(' ')}`)
         result = await ytUitls.searchYT(args.join(' '));
         msg = ytUitls.songEmbed("Sigue", result, 0);
         status.ok = true;
     }
-    if(!(result instanceof Song)) {
+    if (!(result instanceof Song)) {
         status.ok = false;
         return "Nel, no puedo agregar playlists";
     }
@@ -208,7 +204,7 @@ async function playtop(discord_message: Message, args: string[], status?: {ok: B
 //TODO: bug playskip without arguments and without queue
 async function playskip(discord_message: Message, args: string[]) {
     const serverQueue = globalQueues.get(discord_message.guild.id);
-    let status = {ok: false};
+    let status = { ok: false };
     let reply = await playtop(discord_message, args, status);
     if (status.ok) {
         serverQueue.connection.dispatcher.end();
@@ -237,7 +233,7 @@ async function volume(discord_message: Message, args: string[]) {
     }
 
     let volume = parseInt(args[0]);
-    if(isNaN(volume))
+    if (isNaN(volume))
         return "No mames eso no es un número";
 
     if (volume < 0) volume = 0;
@@ -268,7 +264,7 @@ async function queue(discord_message: Message, _args: string[]) {
 
     const next10 = serverQueue.songs.slice(0, 11);
     var msg = `Now playing: ${next10[0].title}\nUp Next:\n`;
-    next10.forEach( (song, idx) =>{
+    next10.forEach((song, idx) => {
         if (idx > 0) {
             msg = msg.concat(`${idx}: ${song.title}\n`);
         }
