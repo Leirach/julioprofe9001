@@ -26,6 +26,8 @@ export let musicCommands: FunctionDictionary = {
     "loop": loop,
     "playlist": playlist,
     "pp": preloadPlaylist,
+    "prev": lastPlayed,
+    "lp": lastPlayed,
 }
 
 async function preloadPlaylist(discord_message: Message, args: string[]) {
@@ -127,7 +129,7 @@ function playSong(guild: Guild, song: any) {
             // { highWaterMark: 1024 * 1024 * 10 } // 10mb buffer, supposedly
         ).on("finish", () => {
             if (!serverQueue.loop)
-                serverQueue.songs.shift();
+                serverQueue.lastPlayed = serverQueue.songs.shift();
             playSong(guild, serverQueue.songs[0]);
         })
         .on("error", (error: Error) => {
@@ -287,4 +289,14 @@ async function loop(discord_message: Message, args: string[]) {
         return "Loop-the-loop";
     else
         return "No more loop"
+}
+
+async function lastPlayed(discord_message: Message, args: string[]) {
+    const serverQueue = globalQueues.get(discord_message.guild.id);
+    if (!serverQueue?.songs)
+        return "No hay ni madres aquí";
+
+    // send last played embed
+    const lp = serverQueue.lastPlayed;
+    return ytUitls.songEmbed("Last played", lp, 0);
 }

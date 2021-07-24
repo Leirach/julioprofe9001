@@ -24,6 +24,7 @@ export class QueueContract {
     voiceChannel: VoiceChannel;
     connection: VoiceConnection | null;
     songs: Array<Song>;
+    lastPlayed: Song;
     playing: boolean;
     loop: boolean;
 

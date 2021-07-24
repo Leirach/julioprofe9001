@@ -56,6 +56,8 @@ exports.musicCommands = {
     "loop": loop,
     "playlist": playlist,
     "pp": preloadPlaylist,
+    "prev": lastPlayed,
+    "lp": lastPlayed,
 };
 function preloadPlaylist(discord_message, args) {
     return __awaiter(this, void 0, void 0, function* () {
@@ -154,7 +156,7 @@ function playSong(guild, song) {
     // { highWaterMark: 1024 * 1024 * 10 } // 10mb buffer, supposedly
     ).on("finish", () => {
         if (!serverQueue.loop)
-            serverQueue.songs.shift();
+            serverQueue.lastPlayed = serverQueue.songs.shift();
         playSong(guild, serverQueue.songs[0]);
     })
         .on("error", (error) => {
@@ -314,5 +316,15 @@ function loop(discord_message, args) {
             return "Loop-the-loop";
         else
             return "No more loop";
+    });
+}
+function lastPlayed(discord_message, args) {
+    return __awaiter(this, void 0, void 0, function* () {
+        const serverQueue = globalQueues.get(discord_message.guild.id);
+        if (!(serverQueue === null || serverQueue === void 0 ? void 0 : serverQueue.songs))
+            return "No hay ni madres aquí";
+        // send last played embed
+        const lp = serverQueue.lastPlayed;
+        return ytUitls.songEmbed("Last played", lp, 0);
     });
 }
