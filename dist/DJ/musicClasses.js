@@ -16,6 +16,8 @@ class QueueContract {
         this.textChannel = discord_message.channel;
         this.voiceChannel = voiceChannel;
         this.connection = null;
+        this.player = null;
+        this.currentTrack = null;
         this.songs = Array();
         this.playing = true;
         this.loop = false;

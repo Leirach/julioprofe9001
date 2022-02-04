@@ -94,18 +94,14 @@ function react(discord_message) {
 function initBot(authToken) {
     return __awaiter(this, void 0, void 0, function* () {
         //init bot
-        bot = new discord_js_1.Client();
-        yield bot.login(authToken)
-            .then(() => {
-            console.log('Connected!');
-            if (bot.user)
-                console.log(`${bot.user.username} - ${bot.user.id}`);
-        })
-            .catch(err => {
-            console.error('Connection failed: ');
-            console.error(err);
+        bot = new discord_js_1.Client({
+            intents: [discord_js_1.Intents.FLAGS.GUILDS, discord_js_1.Intents.FLAGS.DIRECT_MESSAGES, discord_js_1.Intents.FLAGS.GUILD_MESSAGES, discord_js_1.Intents.FLAGS.GUILD_VOICE_STATES],
         });
-        bot.on("message", replyTo);
+        yield bot.login(authToken);
+        console.log('Connected!');
+        if (bot.user)
+            console.log(`${bot.user.username} - ${bot.user.id}`);
+        bot.on("messageCreate", replyTo);
     });
 }
 exports.initBot = initBot;

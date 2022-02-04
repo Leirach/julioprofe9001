@@ -1,4 +1,5 @@
-import { Message, Collection, Guild, MessageEmbed } from "discord.js";
+import { Message, Collection, Guild, MessageEmbed, VoiceChannel } from "discord.js";
+import { joinVoiceChannel, createAudioResource, createAudioPlayer, AudioPlayerStatus, VoiceConnectionStatus } from '@discordjs/voice';
 import ytdl from 'ytdl-core';
 import { QueueContract, Song } from './musicClasses';
 import * as ytUitls from './youtubeUtils';
@@ -34,7 +35,7 @@ async function preloadPlaylist(discord_message: Message, args: string[]) {
     try {
         await ytUitls.cachePlaylist(true);
     } catch (err) {
-        return `Lmao la cagué: ${err.message}`;
+        return `Lmao la cagué: ${err}`;
     }
     return "Big pp, done."
 }
@@ -68,7 +69,7 @@ async function play(discord_message: Message, args: string[], preshuffle?: boole
         if (!args.join(' ')) {
             return "Tocame esta XD";
         }
-        result = await ytUitls.searchYT(args.join(' '))
+        result = await ytUitls.searchYT(args.join(' '));
         sendEmbed = true;
     }
 
@@ -82,30 +83,39 @@ async function play(discord_message: Message, args: string[], preshuffle?: boole
             return sendEmbed ? ytUitls.songEmbed("Agregado", result, 0) : "Yastas";
         }
         else {
+            // TODO: preshuffle and handle arrays better
+            if (preshuffle) result = shuffleArray(result);
             serverQueue.songs = serverQueue.songs.concat(result);
             return `Agregadas un chingo de canciones`;
         }
     }
 
     // Otherwise create new contract and start playing music boi
-    serverQueue = new QueueContract(discord_message, voiceChannel);
+    serverQueue = new QueueContract(discord_message, voiceChannel as VoiceChannel);
     globalQueues.set(discord_message.guild.id, serverQueue);
 
     if (result instanceof Song) {
         serverQueue.songs.push(result);
     }
     else {
+        // TODO: preshuffle and handle arrays better (same as above)
+        if (preshuffle) result = shuffleArray(result);
         serverQueue.songs = serverQueue.songs.concat(result);
     }
 
-    // pre shuffle songs form playlist
-    if (preshuffle) serverQueue.songs = shuffleArray(serverQueue.songs);
-
     try {
         const song = serverQueue.songs[0];
-        let msg = sendEmbed ? ytUitls.songEmbed("Now Playing", song, 0) : `Now playing: ${song.title}`;
-        serverQueue.textChannel.send(msg);
-        serverQueue.connection = await voiceChannel.join();
+        if (sendEmbed) {
+            serverQueue.textChannel.send(ytUitls.songEmbed("Now Playing", song, 0));
+        }
+        else {
+            serverQueue.textChannel.send(`Now playing: ${song.title}`);
+        }
+        serverQueue.connection = joinVoiceChannel({
+            channelId: voiceChannel.id,
+            guildId: voiceChannel.guildId,
+            adapterCreator: voiceChannel.guild.voiceAdapterCreator
+        });
         playSong(discord_message.guild, serverQueue.songs[0]);
     } catch (err) {
         console.log(err);
@@ -117,22 +127,31 @@ async function play(discord_message: Message, args: string[], preshuffle?: boole
 function playSong(guild: Guild, song: any) {
     const serverQueue = globalQueues.get(guild.id);
     if (!song) {
-        serverQueue.voiceChannel.leave();
+        serverQueue.connection.destroy();
         globalQueues.delete(guild.id);
         return;
     }
+    // Help, im only supposed to increase this param in ytdl and i dont even know why
+    // { highWaterMark: 1024 * 1024 * 10 } // 10mb buffer, supposedly
+    console.log("getting ytdl song");
+    serverQueue.currentTrack = createAudioResource(ytdl(song.url, { filter: 'audioonly', highWaterMark: bufferSize }), {inlineVolume: true});
+    console.log("ytdl got");
+    let vol = ytUitls.getVolume(song.url);
+    serverQueue.currentTrack.volume.setVolumeLogarithmic(vol/5);
 
-    const dispatcher = serverQueue.connection
-        .play(
-            ytdl(song.url, { filter: 'audioonly', highWaterMark: bufferSize })
-            // Help, im only supposed to increase this param in ytdl and i dont even know why
-            // { highWaterMark: 1024 * 1024 * 10 } // 10mb buffer, supposedly
-        ).on("finish", () => {
-            if (!serverQueue.loop)
-                serverQueue.lastPlayed = serverQueue.songs.shift();
-            playSong(guild, serverQueue.songs[0]);
+    if (!serverQueue.player){
+        serverQueue.player = createAudioPlayer();
+        serverQueue.connection.subscribe(serverQueue.player);
+        serverQueue.player.on("stateChange", (state) => {
+            console.log(state.status);
+            console.log(serverQueue.currentTrack.ended);
+            if (serverQueue.currentTrack.ended) {
+                if (!serverQueue.loop)
+                    serverQueue.lastPlayed = serverQueue.songs.shift();
+                playSong(guild, serverQueue.songs[0]);
+            }
         })
-        .on("error", (error: Error) => {
+        .on("error", (error: any) => {
             console.error(error);
             let np = serverQueue.songs.shift();
             let embed = new MessageEmbed()
@@ -142,11 +161,13 @@ function playSong(guild: Guild, song: any) {
                 .setDescription(`Razon: ${error.message}`)
                 .setThumbnail(config.errorImg)
                 .setImage(np.thumbnail);
-            serverQueue.textChannel.send(embed);
+            serverQueue.textChannel.send({ embeds: [embed] });
             playSong(guild, serverQueue.songs[0]);
         });
-    let vol = ytUitls.getVolume(song.url);
-    dispatcher.setVolumeLogarithmic(vol / 5);
+    }
+
+    console.log("playing track here")
+    serverQueue.player.play(serverQueue.currentTrack);
 }
 
 function skip(discord_message: Message, _args: string[]) {
@@ -157,7 +178,8 @@ function skip(discord_message: Message, _args: string[]) {
         return "No mames, ni la estás oyendo";
     const looping = serverQueue.loop;
     serverQueue.loop = false;
-    serverQueue.connection.dispatcher.end();
+
+    serverQueue.player.stop()
     serverQueue.loop = looping;
 }
 
@@ -168,7 +190,7 @@ function stop(discord_message: Message, _args: string[]) {
     if (!discord_message.member.voice.channel)
         return "No mames, ni la estás oyendo";
     serverQueue.songs = [];
-    serverQueue.connection.dispatcher.end();
+    serverQueue.player.stop();
 }
 
 async function playtop(discord_message: Message, args: string[], status?: { ok: Boolean }) {
@@ -209,7 +231,7 @@ async function playskip(discord_message: Message, args: string[]) {
     let status = { ok: false };
     let reply = await playtop(discord_message, args, status);
     if (status.ok) {
-        serverQueue.connection.dispatcher.end();
+        serverQueue.player.stop();
     }
     return reply;
 }
@@ -242,8 +264,9 @@ async function volume(discord_message: Message, args: string[]) {
     if (volume > 10) {
         return "No creo que eso sea una buena idea";
     }
+
     ytUitls.setVolume(serverQueue.songs[0].url, volume);
-    serverQueue.connection.dispatcher.setVolumeLogarithmic(volume / 5);
+    serverQueue.currentTrack.volume.setVolumeLogarithmic(volume / 5);
 }
 
 async function nowPlaying(discord_message: Message, _args: string[]) {
@@ -254,7 +277,7 @@ async function nowPlaying(discord_message: Message, _args: string[]) {
     //get song and send fancy embed
     const np = serverQueue.songs[0];
     // get time and format it accordingly
-    let time = serverQueue.connection.dispatcher.streamTime;
+    let time = serverQueue.currentTrack.playbackDuration;
     return ytUitls.songEmbed("Now playing", np, time);
 }
 
@@ -265,7 +288,7 @@ async function queue(discord_message: Message, _args: string[]) {
     }
 
     const next10 = serverQueue.songs.slice(0, 11);
-    var msg = `Now playing: ${next10[0].title}\nUp Next:\n`;
+    var msg = `Now playing: ${next10[0].title}\n${serverQueue.songs.length} in queue\nUp Next:\n`;
     next10.forEach((song, idx) => {
         if (idx > 0) {
             msg = msg.concat(`${idx}: ${song.title}\n`);

@@ -33,6 +33,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.musicCommands = void 0;
 const discord_js_1 = require("discord.js");
+const voice_1 = require("@discordjs/voice");
 const ytdl_core_1 = __importDefault(require("ytdl-core"));
 const musicClasses_1 = require("./musicClasses");
 const ytUitls = __importStar(require("./youtubeUtils"));
@@ -65,7 +66,7 @@ function preloadPlaylist(discord_message, args) {
             yield ytUitls.cachePlaylist(true);
         }
         catch (err) {
-            return `Lmao la cagué: ${err.message}`;
+            return `Lmao la cagué: ${err}`;
         }
         return "Big pp, done.";
     });
@@ -92,7 +93,7 @@ function play(discord_message, args, preshuffle) {
         // tries to parse url
         let result;
         let sendEmbed;
-        if (utilities_1.isURL(args[0])) {
+        if ((0, utilities_1.isURL)(args[0])) {
             result = yield ytUitls.getSongs(args[0]);
             sendEmbed = false;
         }
@@ -113,6 +114,9 @@ function play(discord_message, args, preshuffle) {
                 return sendEmbed ? ytUitls.songEmbed("Agregado", result, 0) : "Yastas";
             }
             else {
+                // TODO: preshuffle and handle arrays better
+                if (preshuffle)
+                    result = (0, utilities_1.shuffleArray)(result);
                 serverQueue.songs = serverQueue.songs.concat(result);
                 return `Agregadas un chingo de canciones`;
             }
@@ -124,16 +128,24 @@ function play(discord_message, args, preshuffle) {
             serverQueue.songs.push(result);
         }
         else {
+            // TODO: preshuffle and handle arrays better (same as above)
+            if (preshuffle)
+                result = (0, utilities_1.shuffleArray)(result);
             serverQueue.songs = serverQueue.songs.concat(result);
         }
-        // pre shuffle songs form playlist
-        if (preshuffle)
-            serverQueue.songs = utilities_1.shuffleArray(serverQueue.songs);
         try {
             const song = serverQueue.songs[0];
-            let msg = sendEmbed ? ytUitls.songEmbed("Now Playing", song, 0) : `Now playing: ${song.title}`;
-            serverQueue.textChannel.send(msg);
-            serverQueue.connection = yield voiceChannel.join();
+            if (sendEmbed) {
+                serverQueue.textChannel.send(ytUitls.songEmbed("Now Playing", song, 0));
+            }
+            else {
+                serverQueue.textChannel.send(`Now playing: ${song.title}`);
+            }
+            serverQueue.connection = (0, voice_1.joinVoiceChannel)({
+                channelId: voiceChannel.id,
+                guildId: voiceChannel.guildId,
+                adapterCreator: voiceChannel.guild.voiceAdapterCreator
+            });
             playSong(discord_message.guild, serverQueue.songs[0]);
         }
         catch (err) {
@@ -146,34 +158,45 @@ function play(discord_message, args, preshuffle) {
 function playSong(guild, song) {
     const serverQueue = globalQueues.get(guild.id);
     if (!song) {
-        serverQueue.voiceChannel.leave();
+        serverQueue.connection.destroy();
         globalQueues.delete(guild.id);
         return;
     }
-    const dispatcher = serverQueue.connection
-        .play(ytdl_core_1.default(song.url, { filter: 'audioonly', highWaterMark: bufferSize })
     // Help, im only supposed to increase this param in ytdl and i dont even know why
     // { highWaterMark: 1024 * 1024 * 10 } // 10mb buffer, supposedly
-    ).on("finish", () => {
-        if (!serverQueue.loop)
-            serverQueue.lastPlayed = serverQueue.songs.shift();
-        playSong(guild, serverQueue.songs[0]);
-    })
-        .on("error", (error) => {
-        console.error(error);
-        let np = serverQueue.songs.shift();
-        let embed = new discord_js_1.MessageEmbed()
-            .setAuthor("No se puede reproducir:", config.avatarUrl)
-            .setTitle(np.title)
-            .setURL(np.url)
-            .setDescription(`Razon: ${error.message}`)
-            .setThumbnail(config.errorImg)
-            .setImage(np.thumbnail);
-        serverQueue.textChannel.send(embed);
-        playSong(guild, serverQueue.songs[0]);
-    });
+    console.log("getting ytdl song");
+    serverQueue.currentTrack = (0, voice_1.createAudioResource)((0, ytdl_core_1.default)(song.url, { filter: 'audioonly', highWaterMark: bufferSize }), { inlineVolume: true });
+    console.log("ytdl got");
     let vol = ytUitls.getVolume(song.url);
-    dispatcher.setVolumeLogarithmic(vol / 5);
+    serverQueue.currentTrack.volume.setVolumeLogarithmic(vol / 5);
+    if (!serverQueue.player) {
+        serverQueue.player = (0, voice_1.createAudioPlayer)();
+        serverQueue.connection.subscribe(serverQueue.player);
+        serverQueue.player.on("stateChange", (state) => {
+            console.log(state.status);
+            console.log(serverQueue.currentTrack.ended);
+            if (serverQueue.currentTrack.ended) {
+                if (!serverQueue.loop)
+                    serverQueue.lastPlayed = serverQueue.songs.shift();
+                playSong(guild, serverQueue.songs[0]);
+            }
+        })
+            .on("error", (error) => {
+            console.error(error);
+            let np = serverQueue.songs.shift();
+            let embed = new discord_js_1.MessageEmbed()
+                .setAuthor("No se puede reproducir:", config.avatarUrl)
+                .setTitle(np.title)
+                .setURL(np.url)
+                .setDescription(`Razon: ${error.message}`)
+                .setThumbnail(config.errorImg)
+                .setImage(np.thumbnail);
+            serverQueue.textChannel.send({ embeds: [embed] });
+            playSong(guild, serverQueue.songs[0]);
+        });
+    }
+    console.log("playing track here");
+    serverQueue.player.play(serverQueue.currentTrack);
 }
 function skip(discord_message, _args) {
     const serverQueue = globalQueues.get(discord_message.guild.id);
@@ -183,7 +206,7 @@ function skip(discord_message, _args) {
         return "No mames, ni la estás oyendo";
     const looping = serverQueue.loop;
     serverQueue.loop = false;
-    serverQueue.connection.dispatcher.end();
+    serverQueue.player.stop();
     serverQueue.loop = looping;
 }
 function stop(discord_message, _args) {
@@ -193,7 +216,7 @@ function stop(discord_message, _args) {
     if (!discord_message.member.voice.channel)
         return "No mames, ni la estás oyendo";
     serverQueue.songs = [];
-    serverQueue.connection.dispatcher.end();
+    serverQueue.player.stop();
 }
 function playtop(discord_message, args, status) {
     return __awaiter(this, void 0, void 0, function* () {
@@ -206,7 +229,7 @@ function playtop(discord_message, args, status) {
         }
         let result;
         let msg;
-        if (utilities_1.isURL(args[0])) {
+        if ((0, utilities_1.isURL)(args[0])) {
             result = yield ytUitls.getSongs(args[0]);
             msg = "Yastas";
             status.ok = true;
@@ -236,7 +259,7 @@ function playskip(discord_message, args) {
         let status = { ok: false };
         let reply = yield playtop(discord_message, args, status);
         if (status.ok) {
-            serverQueue.connection.dispatcher.end();
+            serverQueue.player.stop();
         }
         return reply;
     });
@@ -246,7 +269,7 @@ function shuffle(discord_message, _args) {
     if (!(serverQueue === null || serverQueue === void 0 ? void 0 : serverQueue.songs))
         return "No hay ni madres aquí";
     let songs = serverQueue.songs.slice(1);
-    songs = utilities_1.shuffleArray(songs);
+    songs = (0, utilities_1.shuffleArray)(songs);
     songs.unshift(serverQueue.songs[0]);
     serverQueue.songs = songs;
     return "Shuffled 😩👌";
@@ -268,7 +291,7 @@ function volume(discord_message, args) {
             return "No creo que eso sea una buena idea";
         }
         ytUitls.setVolume(serverQueue.songs[0].url, volume);
-        serverQueue.connection.dispatcher.setVolumeLogarithmic(volume / 5);
+        serverQueue.currentTrack.volume.setVolumeLogarithmic(volume / 5);
     });
 }
 function nowPlaying(discord_message, _args) {
@@ -279,7 +302,7 @@ function nowPlaying(discord_message, _args) {
         //get song and send fancy embed
         const np = serverQueue.songs[0];
         // get time and format it accordingly
-        let time = serverQueue.connection.dispatcher.streamTime;
+        let time = serverQueue.currentTrack.playbackDuration;
         return ytUitls.songEmbed("Now playing", np, time);
     });
 }
@@ -291,7 +314,7 @@ function queue(discord_message, _args) {
             return "No hay ni madres aqui";
         }
         const next10 = serverQueue.songs.slice(0, 11);
-        var msg = `Now playing: ${next10[0].title}\nUp Next:\n`;
+        var msg = `Now playing: ${next10[0].title}\n${serverQueue.songs.length} in queue\nUp Next:\n`;
         next10.forEach((song, idx) => {
             if (idx > 0) {
                 msg = msg.concat(`${idx}: ${song.title}\n`);

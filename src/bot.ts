@@ -1,10 +1,8 @@
-import { Message, Client, Channel, TextChannel, DMChannel, NewsChannel } from "discord.js";
+import { Message, Client, Intents, TextBasedChannels, MessageEmbed } from "discord.js";
 import { replies, reactions } from './replies';
 import { commands } from './commands';
 import { musicCommands } from './DJ/music'
 import config from './config.json'
-
-type TextChannels = DMChannel | TextChannel | NewsChannel;
 
 let bot: Client;
 
@@ -36,7 +34,7 @@ function replyTo(discord_message: Message) {
     react(discord_message);
 }
 
-function respond(word: string, channel: TextChannels) {
+function respond(word: string, channel: TextBasedChannels) {
     //remove non-alpha chars
     word = word.replace(/[^a-z]/g, "");
 
@@ -87,18 +85,14 @@ function react(discord_message: Message) {
 
 export async function initBot(authToken: string) {
     //init bot
-    bot = new Client();
+    bot = new Client({
+        intents: [Intents.FLAGS.GUILDS, Intents.FLAGS.DIRECT_MESSAGES, Intents.FLAGS.GUILD_MESSAGES, Intents.FLAGS.GUILD_VOICE_STATES],
+    });
 
     await bot.login(authToken)
-        .then(() => {
-            console.log('Connected!');
-            if (bot.user)
-                console.log(`${bot.user.username} - ${bot.user.id}`);
-        })
-        .catch(err => {
-            console.error('Connection failed: ');
-            console.error(err);
-        })
+    console.log('Connected!');
+    if (bot.user)
+        console.log(`${bot.user.username} - ${bot.user.id}`);
 
-    bot.on("message", replyTo);
+    bot.on("messageCreate", replyTo);
 }

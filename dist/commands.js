@@ -46,6 +46,7 @@ const replies_1 = require("./replies");
 const utilities = __importStar(require("./utilities"));
 var copypastas = utilities.loadCopypastas(config_json_1.default.cp_files);
 var castigados = [];
+let a = {};
 exports.commands = {
     "copypasta": copypasta,
     "oraculo": oraculo,
@@ -74,10 +75,13 @@ function playMeme(discord_message, _args) {
             return utilities.getRandom(replies_1.replies.cumbia);
         }
         else if (utilities.randBool(.2)) {
-            return new discord_js_1.MessageEmbed()
+            const embed = new discord_js_1.MessageEmbed()
                 .setAuthor('Now Playing♪', 'https://images-ext-2.discordapp.net/external/2fG56UtfyTSowWQ6HhhPIV9VrZoD_OcVdHVwWpu6rIY/https/rythmbot.co/rythm.gif', 'https://chtm.joto')
                 .setDescription("Cumbia Poder\n\n▬▬▬▬▬▬▬▬▬▬▬▬▬🔘▬▬▬▬▬▬\n\n04:20/05:69\n\nRequested by: Sero4")
                 .setThumbnail('https://is4-ssl.mzstatic.com/image/thumb/Music/v4/46/aa/43/46aa4332-829b-84e6-9605-c6e183f6ca36/source/1200x1200bb.jpg');
+            return {
+                embeds: [embed]
+            };
         }
     });
 }
@@ -116,9 +120,9 @@ function roll(discord_message, args) {
  * @param _args
  */
 function castigar(discord_message, _args) {
-    var _a;
+    var _a, _b;
     return __awaiter(this, void 0, void 0, function* () {
-        const users = discord_message.mentions.users.array();
+        const users = discord_message.mentions.users.toJSON();
         let members = [];
         let vc;
         if (!users) {
@@ -127,11 +131,10 @@ function castigar(discord_message, _args) {
         if (!discord_message.guild) {
             return "Aqui no uei";
         }
-        users.forEach(user => {
-            var _a;
-            members.push((_a = discord_message.guild) === null || _a === void 0 ? void 0 : _a.member(user));
-        });
-        vc = (_a = members[0]) === null || _a === void 0 ? void 0 : _a.voice.channelID;
+        for (let user of users) {
+            members.push(yield ((_a = discord_message.guild) === null || _a === void 0 ? void 0 : _a.members.fetch(user)));
+        }
+        vc = (_b = members[0]) === null || _b === void 0 ? void 0 : _b.voice.channelId;
         //if member is in voice channel and its not purgatory, send him to the ranch
         if (vc && vc != config_json_1.default.purgatoryChannel) {
             castigados.push({ "members": members, "vc": vc });
@@ -149,7 +152,7 @@ function castigar(discord_message, _args) {
             let aux = castigados.shift();
             let sentBack = 0;
             aux.members.forEach((member) => __awaiter(this, void 0, void 0, function* () {
-                if ((member === null || member === void 0 ? void 0 : member.voice.channelID) == config_json_1.default.purgatoryChannel) {
+                if ((member === null || member === void 0 ? void 0 : member.voice.channelId) == config_json_1.default.purgatoryChannel) {
                     yield (member === null || member === void 0 ? void 0 : member.voice.setChannel(aux.vc));
                     sentBack += 1;
                 }

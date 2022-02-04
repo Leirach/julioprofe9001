@@ -4,7 +4,7 @@
  * the function. Embeds can be return as long as it can be sent via the
  * channel.send() function.
  */
-import { Message, GuildMember, User, MessageEmbed } from "discord.js";
+import { Message, GuildMember, User, MessageEmbed, MessagePayload, MessageOptions } from "discord.js";
 import d20 from 'd20';;
 import config from './config.json';
 import { replies } from './replies';
@@ -12,7 +12,7 @@ import * as utilities from './utilities';
 
 var copypastas = utilities.loadCopypastas(config.cp_files);
 var castigados: any[] = [];
-
+let a: MessageOptions = { }
 /**
  * Declare any new commands here for the bot to handle
  * Then declare the function as an async function to resolve as promise.
@@ -40,15 +40,18 @@ async function copypasta(discord_message: Message, _args: string[]) {
  * @param discord_message
  * @param _args
  */
-async function playMeme(discord_message: Message, _args: string[]) {
+async function playMeme(discord_message: Message, _args: string[]): Promise<MessageOptions | string> {
     if (utilities.randBool(.2)) {
         return utilities.getRandom(replies.cumbia);
     }
     else if (utilities.randBool(.2)) {
-        return new MessageEmbed()
+        const embed = new MessageEmbed()
             .setAuthor('Now Playing♪', 'https://images-ext-2.discordapp.net/external/2fG56UtfyTSowWQ6HhhPIV9VrZoD_OcVdHVwWpu6rIY/https/rythmbot.co/rythm.gif', 'https://chtm.joto')
             .setDescription("Cumbia Poder\n\n▬▬▬▬▬▬▬▬▬▬▬▬▬🔘▬▬▬▬▬▬\n\n04:20/05:69\n\nRequested by: Sero4")
             .setThumbnail('https://is4-ssl.mzstatic.com/image/thumb/Music/v4/46/aa/43/46aa4332-829b-84e6-9605-c6e183f6ca36/source/1200x1200bb.jpg')
+        return {
+            embeds: [embed]
+        }
     }
 }
 
@@ -85,17 +88,17 @@ async function roll(discord_message: Message, args: string[]) {
  * @param _args
  */
 async function castigar(discord_message: Message, _args: string[]) {
-    const users: User[] = discord_message.mentions.users.array();
+    const users: User[] = discord_message.mentions.users.toJSON();
     let members: (GuildMember | null | undefined)[] = [];
 
     let vc: string | undefined;
 
     if (!users) { return "Usage: !castigar @wey"; }
     if (!discord_message.guild) { return "Aqui no uei"; }
-    users.forEach(user => {
-        members.push(discord_message.guild?.member(user));
-    });
-    vc = members[0]?.voice.channelID;
+    for (let user of users) {
+        members.push(await discord_message.guild?.members.fetch(user));
+    }
+    vc = members[0]?.voice.channelId;
 
     //if member is in voice channel and its not purgatory, send him to the ranch
     if (vc && vc != config.purgatoryChannel) {
@@ -117,7 +120,7 @@ async function castigar(discord_message: Message, _args: string[]) {
         let aux = castigados.shift();
         let sentBack = 0;
         aux.members.forEach(async (member: GuildMember) => {
-            if (member?.voice.channelID == config.purgatoryChannel) {
+            if (member?.voice.channelId == config.purgatoryChannel) {
                 await member?.voice.setChannel(aux.vc);
                 sentBack += 1;
             }

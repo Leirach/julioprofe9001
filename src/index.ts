@@ -6,7 +6,7 @@ import { initBot } from './bot'
 
 // static webpage
 const app = express();
-let port = process.env.PORT || 8080;
+let port = process.env.PORT || 80;
 app.listen(port);
 let client = path.join(__dirname, '..', 'client');
 app.use(express.static(client));

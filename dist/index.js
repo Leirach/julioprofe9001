@@ -9,8 +9,8 @@ const express_1 = __importDefault(require("express"));
 const path_1 = __importDefault(require("path"));
 const bot_1 = require("./bot");
 // static webpage
-const app = express_1.default();
-let port = process.env.PORT || 8080;
+const app = (0, express_1.default)();
+let port = process.env.PORT || 80;
 app.listen(port);
 let client = path_1.default.join(__dirname, '..', 'client');
 app.use(express_1.default.static(client));
@@ -21,4 +21,4 @@ if (!authToken) {
     process.exit(1);
 }
 // init discord bot
-bot_1.initBot(authToken);
+(0, bot_1.initBot)(authToken);

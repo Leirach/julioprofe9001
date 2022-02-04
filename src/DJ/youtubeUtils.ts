@@ -4,7 +4,7 @@ import { Duration } from 'luxon';
 import * as config from '../config.json';
 import fs from 'fs';
 import readline from 'readline';
-import { MessageEmbed } from 'discord.js';
+import { MessageEmbed, MessageOptions } from 'discord.js';
 
 const youtube = google.youtube('v3');
 const apiKey = process.env.YT_API_KEY;
@@ -147,7 +147,7 @@ export async function getSongs(url: string) {
 }
 
 // Utilities
-export function songEmbed(title: string, song: Song, streamTime: number) {
+export function songEmbed(title: string, song: Song, streamTime: number): MessageOptions {
     let ltime = Duration.fromMillis(streamTime);
     let tTime = Duration.fromISO(song.duration);
     let format = tTime.as('hours') < 1 ? 'mm:ss' : 'hh:mm:ss';
@@ -166,7 +166,7 @@ export function songEmbed(title: string, song: Song, streamTime: number) {
         .setThumbnail(config.avatarUrl)
         .addField(song.author, `${timestamp} Volume: ${getVolume(song.url)}`)
         .setImage(song.thumbnail);
-    return embed;
+    return { embeds: [embed] };
 }
 
 export function getTimestamp(stream: number, total: string) {

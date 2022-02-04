@@ -187,7 +187,7 @@ function songEmbed(title, song, streamTime) {
         .setThumbnail(config.avatarUrl)
         .addField(song.author, `${timestamp} Volume: ${getVolume(song.url)}`)
         .setImage(song.thumbnail);
-    return embed;
+    return { embeds: [embed] };
 }
 exports.songEmbed = songEmbed;
 function getTimestamp(stream, total) {
