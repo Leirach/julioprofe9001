@@ -1,14 +1,15 @@
 import { Message, Collection, Guild, MessageEmbed, VoiceChannel } from "discord.js";
-import { joinVoiceChannel, createAudioResource, createAudioPlayer, AudioPlayerStatus, VoiceConnectionStatus } from '@discordjs/voice';
+import { joinVoiceChannel, createAudioResource, createAudioPlayer } from '@discordjs/voice';
 import ytdl from 'ytdl-core';
 import { QueueContract, Song } from './musicClasses';
 import * as ytUitls from './youtubeUtils';
 import { isURL, shuffleArray } from "../utilities";
 import * as config from '../config.json'
+import { GlobalQueueManager } from "./GlobalQueueMap";
 
 const bufferSize = 1 << 25;
 
-let globalQueues = new Collection<string, QueueContract>();
+let globalQueues = GlobalQueueManager.getInstance();
 
 type FunctionDictionary = { [key: string]: Function };
 export let musicCommands: FunctionDictionary = {

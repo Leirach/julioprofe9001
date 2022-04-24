@@ -1,10 +1,13 @@
-import { Message, Client, Intents, TextBasedChannels, MessageEmbed } from "discord.js";
+import { Message, Client, Intents, TextBasedChannels } from "discord.js";
 import { replies, reactions } from './replies';
 import { commands } from './commands';
-import { musicCommands } from './DJ/music'
-import config from './config.json'
+import { musicCommands } from './DJ/music';
+import { VoiceStatusEventEmitter } from './DJ/voiceChannelEvents'
+import config from './config.json';
 
 let bot: Client;
+
+const voiceStatus = VoiceStatusEventEmitter.getInstance();
 
 function replyTo(discord_message: Message) {
     if (discord_message.author.id == bot.user?.id) {
@@ -95,4 +98,23 @@ export async function initBot(authToken: string) {
         console.log(`${bot.user.username} - ${bot.user.id}`);
 
     bot.on("messageCreate", replyTo);
+
+
+    // checks for empty voice channel to disconnect
+    bot.on("voiceStateUpdate", (oldState, newState) => {
+        // oldState check for disconnects
+        if (oldState.channel?.members.size == 1) {
+            // emit if bot is last in server
+            if (oldState.channel?.members.first().id == bot.user.id) {
+                voiceStatus.emitEmpty(oldState.guild.id);
+            }
+        }
+
+        if (newState.channel?.members.size > 1) {
+            // emit only if bot is still in server
+            if (newState.channel?.members.get(bot.user.id)) {
+                voiceStatus.emitJoined(oldState.guild.id);
+            }
+        }
+    })
 }

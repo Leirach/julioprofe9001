@@ -17,8 +17,10 @@ const discord_js_1 = require("discord.js");
 const replies_1 = require("./replies");
 const commands_1 = require("./commands");
 const music_1 = require("./DJ/music");
+const voiceChannelEvents_1 = require("./DJ/voiceChannelEvents");
 const config_json_1 = __importDefault(require("./config.json"));
 let bot;
+const voiceStatus = voiceChannelEvents_1.VoiceStatusEventEmitter.getInstance();
 function replyTo(discord_message) {
     var _a;
     if (discord_message.author.id == ((_a = bot.user) === null || _a === void 0 ? void 0 : _a.id)) {
@@ -102,6 +104,23 @@ function initBot(authToken) {
         if (bot.user)
             console.log(`${bot.user.username} - ${bot.user.id}`);
         bot.on("messageCreate", replyTo);
+        // como verga meto esto a music.js
+        bot.on("voiceStateUpdate", (oldState, newState) => {
+            var _a, _b, _c, _d;
+            // oldState check for disconnects
+            if (((_a = oldState.channel) === null || _a === void 0 ? void 0 : _a.members.size) == 1) {
+                // emit if bot is last in server
+                if (((_b = oldState.channel) === null || _b === void 0 ? void 0 : _b.members.first().id) == bot.user.id) {
+                    voiceStatus.emitEmpty(oldState.guild.id);
+                }
+            }
+            if (((_c = newState.channel) === null || _c === void 0 ? void 0 : _c.members.size) > 1) {
+                // emit only if bot is still in server
+                if ((_d = newState.channel) === null || _d === void 0 ? void 0 : _d.members.get(bot.user.id)) {
+                    voiceStatus.emitJoined(oldState.guild.id);
+                }
+            }
+        });
     });
 }
 exports.initBot = initBot;

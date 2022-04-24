@@ -39,8 +39,9 @@ const musicClasses_1 = require("./musicClasses");
 const ytUitls = __importStar(require("./youtubeUtils"));
 const utilities_1 = require("../utilities");
 const config = __importStar(require("../config.json"));
+const GlobalQueueMap_1 = require("./GlobalQueueMap");
 const bufferSize = 1 << 25;
-let globalQueues = new discord_js_1.Collection();
+let globalQueues = GlobalQueueMap_1.GlobalQueueManager.getInstance();
 exports.musicCommands = {
     "play": play,
     "queue": queue,

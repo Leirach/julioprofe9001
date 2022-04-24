@@ -1,7 +1,4 @@
-import {
-    Message, VoiceChannel, Collection, TextBasedChannels
-} from "discord.js";
-
+import { Message, VoiceChannel, Collection, TextBasedChannels } from "discord.js";
 import { AudioPlayer, AudioResource, VoiceConnection } from "@discordjs/voice";
 
 export class Song {
@@ -43,6 +40,3 @@ export class QueueContract {
         this.loop = false;
     }
 }
-
-// no jala esto por alguna razon
-export type GlobalQueue = Collection<string, QueueContract>;

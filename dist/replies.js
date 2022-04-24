@@ -50,11 +50,9 @@ exports.replies = {
     ],
     cumbia: [
         "Rythm me la pela",
-        "te equivocaste, es &play",
         "Rythm es joto",
         "oi nomas ese cumbion",
-        "UUEUADUDUWADUWA",
-        "SANESS, YOU WANNA HAVE A BAD TOM???"
+        "F rythm"
     ]
 };
 exports.reactions = [
@@ -115,20 +113,12 @@ exports.reactions = [
     }
 ];
 exports.musicPlay = [
-    "Ah esa es buena",
-    "Me vine",
-    "Absolute banger",
-    "Esa está buena",
+    "Banger",
     "😩👌",
     "&loop jkjk unless...",
-    "Apoco les gusta esta basura",
-    "Nmms qué asco",
-    "Wakala",
     "&skip lmao",
     "Mejor pongan megalos",
-    "Never gonna give you up",
     "Te la voy a tocar",
     "Dime donde te la toco",
-    "Megalovania otra vez?",
-    "Aeugh"
+    "Feliz dia del payaso",
 ];
