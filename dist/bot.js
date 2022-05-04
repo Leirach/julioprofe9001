@@ -8,27 +8,24 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.initBot = void 0;
-const discord_js_1 = require("discord.js");
 const replies_1 = require("./replies");
 const commands_1 = require("./commands");
 const music_1 = require("./DJ/music");
 const voiceChannelEvents_1 = require("./DJ/voiceChannelEvents");
-const config_json_1 = __importDefault(require("./config.json"));
-let bot;
+const config_1 = require("./config");
+const botClass_1 = require("./botClass");
 const voiceStatus = voiceChannelEvents_1.VoiceStatusEventEmitter.getInstance();
 function replyTo(discord_message) {
     var _a;
+    const bot = botClass_1.Bot.getInstance();
     if (discord_message.author.id == ((_a = bot.user) === null || _a === void 0 ? void 0 : _a.id)) {
         return;
     }
     //reply to messages
     let message = discord_message.content;
-    if (discord_message.content.startsWith(config_json_1.default.musicPrefix)) {
+    if (discord_message.content.startsWith(config_1.config.musicPrefix)) {
         var words = message.split(" ");
         const command = words[0].substring(1);
         djJulio(command, words.slice(1), discord_message);
@@ -38,7 +35,7 @@ function replyTo(discord_message) {
     var words = message.split(" ");
     words.forEach((word, idx) => {
         //prefix '!' for special commands
-        if (word.charAt(0) === config_json_1.default.prefix) {
+        if (word.charAt(0) === config_1.config.prefix) {
             const command = word.substring(1);
             handle(command, words.slice(idx + 1), discord_message);
         }
@@ -95,16 +92,13 @@ function react(discord_message) {
 }
 function initBot(authToken) {
     return __awaiter(this, void 0, void 0, function* () {
-        //init bot
-        bot = new discord_js_1.Client({
-            intents: [discord_js_1.Intents.FLAGS.GUILDS, discord_js_1.Intents.FLAGS.DIRECT_MESSAGES, discord_js_1.Intents.FLAGS.GUILD_MESSAGES, discord_js_1.Intents.FLAGS.GUILD_VOICE_STATES],
-        });
+        const bot = botClass_1.Bot.getInstance();
         yield bot.login(authToken);
         console.log('Connected!');
         if (bot.user)
             console.log(`${bot.user.username} - ${bot.user.id}`);
         bot.on("messageCreate", replyTo);
-        // como verga meto esto a music.js
+        // checks for empty voice channel to disconnect
         bot.on("voiceStateUpdate", (oldState, newState) => {
             var _a, _b, _c, _d;
             // oldState check for disconnects

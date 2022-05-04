@@ -38,8 +38,9 @@ const ytdl_core_1 = __importDefault(require("ytdl-core"));
 const musicClasses_1 = require("./musicClasses");
 const ytUitls = __importStar(require("./youtubeUtils"));
 const utilities_1 = require("../utilities");
-const config = __importStar(require("../config.json"));
+const config_1 = require("../config");
 const GlobalQueueMap_1 = require("./GlobalQueueMap");
+const botClass_1 = require("../botClass");
 const bufferSize = 1 << 25;
 let globalQueues = GlobalQueueMap_1.GlobalQueueManager.getInstance();
 exports.musicCommands = {
@@ -74,7 +75,7 @@ function preloadPlaylist(discord_message, args) {
 }
 function playlist(discord_message, args) {
     return __awaiter(this, void 0, void 0, function* () {
-        return yield play(discord_message, [config.playlist], true);
+        return yield play(discord_message, [config_1.config.playlist], true);
     });
 }
 /**
@@ -84,10 +85,11 @@ function playlist(discord_message, args) {
  */
 function play(discord_message, args, preshuffle) {
     return __awaiter(this, void 0, void 0, function* () {
+        const bot = botClass_1.Bot.getInstance();
         const voiceChannel = discord_message.member.voice.channel;
         if (!voiceChannel)
             return "No estás conectado en vc";
-        const permissions = voiceChannel.permissionsFor(config.botID);
+        const permissions = voiceChannel.permissionsFor(bot.user.id);
         if (!permissions.has("CONNECT") || !permissions.has("SPEAK")) {
             return "Necesito permisos para conectar en ese canal";
         }
@@ -186,11 +188,11 @@ function playSong(guild, song) {
             console.error(error);
             let np = serverQueue.songs.shift();
             let embed = new discord_js_1.MessageEmbed()
-                .setAuthor("No se puede reproducir:", config.avatarUrl)
+                .setAuthor("No se puede reproducir:", config_1.config.avatarUrl)
                 .setTitle(np.title)
                 .setURL(np.url)
                 .setDescription(`Razon: ${error.message}`)
-                .setThumbnail(config.errorImg)
+                .setThumbnail(config_1.config.errorImg)
                 .setImage(np.thumbnail);
             serverQueue.textChannel.send({ embeds: [embed] });
             playSong(guild, serverQueue.songs[0]);

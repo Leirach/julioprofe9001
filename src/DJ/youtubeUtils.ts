@@ -1,7 +1,7 @@
 import { google } from 'googleapis';
 import { Song } from "./musicClasses";
 import { Duration } from 'luxon';
-import * as config from '../config.json';
+import { config } from '../config';
 import fs from 'fs';
 import readline from 'readline';
 import { MessageEmbed, MessageOptions } from 'discord.js';

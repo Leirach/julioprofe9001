@@ -1,15 +1,15 @@
-import { Message, Client, Intents, TextBasedChannels } from "discord.js";
+import { Message, Client, Intents, TextBasedChannels, VoiceState } from "discord.js";
 import { replies, reactions } from './replies';
 import { commands } from './commands';
 import { musicCommands } from './DJ/music';
 import { VoiceStatusEventEmitter } from './DJ/voiceChannelEvents'
-import config from './config.json';
-
-let bot: Client;
+import { config } from './config';
+import { Bot } from "./botClass";
 
 const voiceStatus = VoiceStatusEventEmitter.getInstance();
 
-function replyTo(discord_message: Message) {
+function replyTo(this: Bot, discord_message: Message) {
+    const bot = Bot.getInstance()
     if (discord_message.author.id == bot.user?.id) {
         return;
     }
@@ -87,10 +87,7 @@ function react(discord_message: Message) {
 }
 
 export async function initBot(authToken: string) {
-    //init bot
-    bot = new Client({
-        intents: [Intents.FLAGS.GUILDS, Intents.FLAGS.DIRECT_MESSAGES, Intents.FLAGS.GUILD_MESSAGES, Intents.FLAGS.GUILD_VOICE_STATES],
-    });
+    const bot = Bot.getInstance();
 
     await bot.login(authToken)
     console.log('Connected!');
@@ -98,7 +95,6 @@ export async function initBot(authToken: string) {
         console.log(`${bot.user.username} - ${bot.user.id}`);
 
     bot.on("messageCreate", replyTo);
-
 
     // checks for empty voice channel to disconnect
     bot.on("voiceStateUpdate", (oldState, newState) => {

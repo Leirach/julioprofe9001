@@ -41,12 +41,11 @@ exports.commands = void 0;
 const discord_js_1 = require("discord.js");
 const d20_1 = __importDefault(require("d20"));
 ;
-const config_json_1 = __importDefault(require("./config.json"));
+const config_1 = require("./config");
 const replies_1 = require("./replies");
 const utilities = __importStar(require("./utilities"));
-var copypastas = utilities.loadCopypastas(config_json_1.default.cp_files);
+var copypastas = utilities.loadCopypastas(config_1.config.cp_files);
 var castigados = [];
-let a = {};
 exports.commands = {
     "copypasta": copypasta,
     "oraculo": oraculo,
@@ -104,7 +103,7 @@ function oraculo(discord_message, _args) {
 function roll(discord_message, args) {
     return __awaiter(this, void 0, void 0, function* () {
         if (args[0]) {
-            return d20_1.default.roll(args[0]); // TODO: error checking
+            return d20_1.default.roll(args[0]).toString();
         }
         else {
             return "Usage: !roll (dice)";
@@ -136,10 +135,10 @@ function castigar(discord_message, _args) {
         }
         vc = (_b = members[0]) === null || _b === void 0 ? void 0 : _b.voice.channelId;
         //if member is in voice channel and its not purgatory, send him to the ranch
-        if (vc && vc != config_json_1.default.purgatoryChannel) {
+        if (vc && vc != config_1.config.purgatoryChannel) {
             castigados.push({ "members": members, "vc": vc });
             members.forEach((member) => __awaiter(this, void 0, void 0, function* () {
-                yield (member === null || member === void 0 ? void 0 : member.voice.setChannel(config_json_1.default.purgatoryChannel, "Castigado"));
+                yield (member === null || member === void 0 ? void 0 : member.voice.setChannel(config_1.config.purgatoryChannel, "Castigado"));
             }));
             if (members.length > 1) {
                 discord_message.channel.send("Castigados, papu");
@@ -152,7 +151,7 @@ function castigar(discord_message, _args) {
             let aux = castigados.shift();
             let sentBack = 0;
             aux.members.forEach((member) => __awaiter(this, void 0, void 0, function* () {
-                if ((member === null || member === void 0 ? void 0 : member.voice.channelId) == config_json_1.default.purgatoryChannel) {
+                if ((member === null || member === void 0 ? void 0 : member.voice.channelId) == config_1.config.purgatoryChannel) {
                     yield (member === null || member === void 0 ? void 0 : member.voice.setChannel(aux.vc));
                     sentBack += 1;
                 }

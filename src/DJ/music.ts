@@ -4,8 +4,9 @@ import ytdl from 'ytdl-core';
 import { QueueContract, Song } from './musicClasses';
 import * as ytUitls from './youtubeUtils';
 import { isURL, shuffleArray } from "../utilities";
-import * as config from '../config.json'
+import { config } from '../config'
 import { GlobalQueueManager } from "./GlobalQueueMap";
+import { Bot } from "../botClass";
 
 const bufferSize = 1 << 25;
 
@@ -51,10 +52,11 @@ async function playlist(discord_message: Message, args: string[]) {
  * @param args
  */
 async function play(discord_message: Message, args: string[], preshuffle?: boolean) {
+    const bot = Bot.getInstance();
     const voiceChannel = discord_message.member.voice.channel;
     if (!voiceChannel)
         return "No estás conectado en vc";
-    const permissions = voiceChannel.permissionsFor(config.botID);
+    const permissions = voiceChannel.permissionsFor(bot.user.id);
     if (!permissions.has("CONNECT") || !permissions.has("SPEAK")) {
         return "Necesito permisos para conectar en ese canal";
     }
@@ -135,12 +137,12 @@ function playSong(guild: Guild, song: any) {
     // Help, im only supposed to increase this param in ytdl and i dont even know why
     // { highWaterMark: 1024 * 1024 * 10 } // 10mb buffer, supposedly
     console.log("getting ytdl song");
-    serverQueue.currentTrack = createAudioResource(ytdl(song.url, { filter: 'audioonly', highWaterMark: bufferSize }), {inlineVolume: true});
+    serverQueue.currentTrack = createAudioResource(ytdl(song.url, { filter: 'audioonly', highWaterMark: bufferSize }), { inlineVolume: true });
     console.log("ytdl got");
     let vol = ytUitls.getVolume(song.url);
-    serverQueue.currentTrack.volume.setVolumeLogarithmic(vol/5);
+    serverQueue.currentTrack.volume.setVolumeLogarithmic(vol / 5);
 
-    if (!serverQueue.player){
+    if (!serverQueue.player) {
         serverQueue.player = createAudioPlayer();
         serverQueue.connection.subscribe(serverQueue.player);
         serverQueue.player.on("stateChange", (state) => {
@@ -152,19 +154,19 @@ function playSong(guild: Guild, song: any) {
                 playSong(guild, serverQueue.songs[0]);
             }
         })
-        .on("error", (error: any) => {
-            console.error(error);
-            let np = serverQueue.songs.shift();
-            let embed = new MessageEmbed()
-                .setAuthor("No se puede reproducir:", config.avatarUrl)
-                .setTitle(np.title)
-                .setURL(np.url)
-                .setDescription(`Razon: ${error.message}`)
-                .setThumbnail(config.errorImg)
-                .setImage(np.thumbnail);
-            serverQueue.textChannel.send({ embeds: [embed] });
-            playSong(guild, serverQueue.songs[0]);
-        });
+            .on("error", (error: any) => {
+                console.error(error);
+                let np = serverQueue.songs.shift();
+                let embed = new MessageEmbed()
+                    .setAuthor("No se puede reproducir:", config.avatarUrl)
+                    .setTitle(np.title)
+                    .setURL(np.url)
+                    .setDescription(`Razon: ${error.message}`)
+                    .setThumbnail(config.errorImg)
+                    .setImage(np.thumbnail);
+                serverQueue.textChannel.send({ embeds: [embed] });
+                playSong(guild, serverQueue.songs[0]);
+            });
     }
 
     console.log("playing track here")

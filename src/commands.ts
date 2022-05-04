@@ -4,15 +4,15 @@
  * the function. Embeds can be return as long as it can be sent via the
  * channel.send() function.
  */
-import { Message, GuildMember, User, MessageEmbed, MessagePayload, MessageOptions } from "discord.js";
+import { Message, GuildMember, User, MessageEmbed, MessageOptions } from "discord.js";
 import d20 from 'd20';;
-import config from './config.json';
+import { config } from './config';
 import { replies } from './replies';
 import * as utilities from './utilities';
 
 var copypastas = utilities.loadCopypastas(config.cp_files);
 var castigados: any[] = [];
-let a: MessageOptions = { }
+
 /**
  * Declare any new commands here for the bot to handle
  * Then declare the function as an async function to resolve as promise.
@@ -72,7 +72,7 @@ async function oraculo(discord_message: Message, _args: string[]) {
  */
 async function roll(discord_message: Message, args: string[]) {
     if (args[0]) {
-        return d20.roll(args[0]); // TODO: error checking
+        return d20.roll(args[0]).toString();
     }
     else {
         return "Usage: !roll (dice)"
