@@ -29,7 +29,7 @@ export class GlobalQueueManager {
         if (!contract) return;
 
         const timeout = setTimeout(() => {
-            contract.connection.destroy();
+            contract.disconnect();
             this.queueMap.delete(guildId);
         }, DISCONNECT_TIMEOUT);
 

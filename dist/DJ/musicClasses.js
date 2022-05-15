@@ -22,5 +22,11 @@ class QueueContract {
         this.playing = true;
         this.loop = false;
     }
+    disconnect() {
+        this.player.off('stateChange', () => { });
+        this.songs = [];
+        this.player.stop();
+        this.connection.destroy();
+    }
 }
 exports.QueueContract = QueueContract;
