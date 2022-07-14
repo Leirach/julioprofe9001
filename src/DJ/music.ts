@@ -1,4 +1,4 @@
-import { Message, Collection, Guild, MessageEmbed, VoiceChannel } from "discord.js";
+import { Message, Collection, Guild, MessageEmbed, VoiceChannel, MessageOptions } from "discord.js";
 import { joinVoiceChannel, createAudioResource, createAudioPlayer } from '@discordjs/voice';
 import ytdl from 'ytdl-core';
 import { QueueContract, Song } from './musicClasses';
@@ -12,7 +12,7 @@ const bufferSize = 1 << 25;
 
 let globalQueues = GlobalQueueManager.getInstance();
 
-type FunctionDictionary = { [key: string]: Function };
+type FunctionDictionary = { [key: string]: (...args: any) => Promise<MessageOptions | string> };
 export let musicCommands: FunctionDictionary = {
     "play": play,
     "queue": queue,
@@ -48,10 +48,8 @@ async function playlist(discord_message: Message, args: string[]) {
 
 /**
  * Plays music!
- * @param discord_message
- * @param args
  */
-async function play(discord_message: Message, args: string[], preshuffle?: boolean) {
+async function play(discord_message: Message, args: string[], preshuffle?: boolean): Promise<MessageOptions | string> {
     const bot = Bot.getInstance();
     const voiceChannel = discord_message.member.voice.channel;
     if (!voiceChannel)
@@ -173,7 +171,7 @@ function playSong(guild: Guild, song: any) {
     serverQueue.player.play(serverQueue.currentTrack);
 }
 
-function skip(discord_message: Message, _args: string[]) {
+async function skip(discord_message: Message, _args: string[]): Promise<MessageOptions | string> {
     const serverQueue = globalQueues.get(discord_message.guild.id);
     if (!serverQueue)
         return "Ni estoy tocando música";
@@ -186,7 +184,7 @@ function skip(discord_message: Message, _args: string[]) {
     serverQueue.loop = looping;
 }
 
-function stop(discord_message: Message, _args: string[]) {
+async function stop(discord_message: Message, _args: string[]): Promise<MessageOptions | string> {
     const serverQueue = globalQueues.get(discord_message.guild.id);
     if (!serverQueue)
         return "Ni estoy tocando música";
@@ -239,7 +237,7 @@ async function playskip(discord_message: Message, args: string[]) {
     return reply;
 }
 
-function shuffle(discord_message: Message, _args: string[]) {
+async function shuffle(discord_message: Message, _args: string[]): Promise<MessageOptions | string> {
     let serverQueue = globalQueues.get(discord_message.guild.id);
     if (!serverQueue?.songs)
         return "No hay ni madres aquí";
@@ -290,18 +288,23 @@ async function queue(discord_message: Message, _args: string[]) {
         return "No hay ni madres aqui";
     }
 
-    const next10 = serverQueue.songs.slice(0, 11);
-    var msg = `Now playing: ${next10[0].title}\n${serverQueue.songs.length} in queue\nUp Next:\n`;
-    next10.forEach((song, idx) => {
-        if (idx > 0) {
-            msg = msg.concat(`${idx}: ${song.title}\n`);
+    let queue_idx = 0;
+
+    let sent = await discord_message.channel.send(ytUitls.queueEmbed(serverQueue.songs, queue_idx));
+
+    const collector = discord_message.channel.createMessageComponentCollector({ time: 15000 });
+
+    collector.on('collect', async interaction => {
+        if (interaction.message.id !== sent.id) return;
+        collector.resetTimer();
+        if (interaction.customId == ytUitls.INTERACTION_PREV_ID) {
+            queue_idx -= 10;
         }
+        if (interaction.customId == ytUitls.INTERACTION_NEXT_ID) {
+            queue_idx += 10;
+        }
+        await interaction.update(ytUitls.queueEmbed(serverQueue.songs, queue_idx));
     });
-    // console.log(next10.length)
-    if (next10.length < 2) {
-        msg = msg.concat("Nada XD");
-    }
-    return msg;
 }
 
 async function loop(discord_message: Message, args: string[]) {

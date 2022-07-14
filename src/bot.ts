@@ -1,4 +1,4 @@
-import { Message, Client, Intents, TextBasedChannels, VoiceState } from "discord.js";
+import { Message, TextBasedChannels } from "discord.js";
 import { replies, reactions } from './replies';
 import { commands } from './commands';
 import { musicCommands } from './DJ/music';
@@ -112,5 +112,5 @@ export async function initBot(authToken: string) {
                 voiceStatus.emitJoined(oldState.guild.id);
             }
         }
-    })
+    });
 }

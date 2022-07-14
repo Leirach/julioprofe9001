@@ -12,7 +12,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.setVolume = exports.getVolume = exports.readVolumes = exports.cachePlaylist = exports.getTimestamp = exports.songEmbed = exports.getSongs = exports.searchYT = void 0;
+exports.setVolume = exports.getVolume = exports.readVolumes = exports.cachePlaylist = exports.queueEmbed = exports.songEmbed = exports.getSongs = exports.searchYT = exports.INTERACTION_NEXT_ID = exports.INTERACTION_PREV_ID = void 0;
 const googleapis_1 = require("googleapis");
 const musicClasses_1 = require("./musicClasses");
 const luxon_1 = require("luxon");
@@ -20,11 +20,14 @@ const config_1 = require("../config");
 const fs_1 = __importDefault(require("fs"));
 const readline_1 = __importDefault(require("readline"));
 const discord_js_1 = require("discord.js");
+exports.INTERACTION_PREV_ID = 'queue_prev';
+exports.INTERACTION_NEXT_ID = 'queue_next';
 const youtube = googleapis_1.google.youtube('v3');
 const apiKey = process.env.YT_API_KEY;
 const prependURL = 'https://www.youtube.com/watch?v=';
 const volumesCSV = './memes/volumes.csv';
 const regexURL = /^.*((youtu.be\/)|(v\/)|(\/u\/\w\/)|(embed\/)|(watch\?))\??v?=?([^#&?]*).*/;
+const QUEUE_PAGE_SIZE = 8;
 let cachedPlaylist = [];
 let volumesFile;
 let volumes = {};
@@ -171,9 +174,39 @@ function songEmbed(title, song, streamTime) {
     return { embeds: [embed] };
 }
 exports.songEmbed = songEmbed;
-function getTimestamp(stream, total) {
+function queueEmbed(queue, start_idx) {
+    const end = start_idx + QUEUE_PAGE_SIZE;
+    const cur_queue = queue.slice(start_idx, end);
+    let embed = new discord_js_1.MessageEmbed()
+        .setAuthor(`Queue`, config_1.config.avatarUrl)
+        .setTitle(`${start_idx + 1} - ${end} of ${queue.length}:`)
+        .setThumbnail(cur_queue[0].thumbnail);
+    let description = "";
+    cur_queue.forEach(((song, idx) => {
+        description += `**${start_idx + idx + 1}. [${song.title}](${song.url})**`;
+        description += `\n${song.author}`;
+        if (idx + 1 < QUEUE_PAGE_SIZE) {
+            description += "\n\n";
+        }
+    }));
+    embed.setDescription(description);
+    return {
+        embeds: [embed],
+        components: [
+            new discord_js_1.MessageActionRow()
+                .addComponents(new discord_js_1.MessageButton()
+                .setCustomId(exports.INTERACTION_PREV_ID)
+                .setLabel('Prev')
+                .setStyle('PRIMARY')
+                .setDisabled(start_idx == 0), new discord_js_1.MessageButton()
+                .setCustomId(exports.INTERACTION_NEXT_ID)
+                .setLabel('Next')
+                .setStyle('PRIMARY')
+                .setDisabled(end >= queue.length))
+        ]
+    };
 }
-exports.getTimestamp = getTimestamp;
+exports.queueEmbed = queueEmbed;
 function cachePlaylist(refresh = false) {
     return __awaiter(this, void 0, void 0, function* () {
         if (cachedPlaylist.length < 1 || refresh) {

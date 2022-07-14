@@ -4,13 +4,18 @@ import { Duration } from 'luxon';
 import { config } from '../config';
 import fs from 'fs';
 import readline from 'readline';
-import { MessageEmbed, MessageOptions } from 'discord.js';
+import { MessageActionRow, MessageButton, MessageEmbed, MessageOptions } from 'discord.js';
+
+export const INTERACTION_PREV_ID = 'queue_prev';
+export const INTERACTION_NEXT_ID = 'queue_next';
 
 const youtube = google.youtube('v3');
 const apiKey = process.env.YT_API_KEY;
 const prependURL = 'https://www.youtube.com/watch?v=';
 const volumesCSV = './memes/volumes.csv';
 const regexURL = /^.*((youtu.be\/)|(v\/)|(\/u\/\w\/)|(embed\/)|(watch\?))\??v?=?([^#&?]*).*/
+
+const QUEUE_PAGE_SIZE = 8;
 
 let cachedPlaylist: Song[] = [];
 let volumesFile: number;
@@ -169,8 +174,43 @@ export function songEmbed(title: string, song: Song, streamTime: number): Messag
     return { embeds: [embed] };
 }
 
-export function getTimestamp(stream: number, total: string) {
+export function queueEmbed(queue: Song[], start_idx: number): MessageOptions {
+    const end = start_idx + QUEUE_PAGE_SIZE;
+    const cur_queue = queue.slice(start_idx, end);
 
+    let embed = new MessageEmbed()
+        .setAuthor(`Queue`, config.avatarUrl)
+        .setTitle(`${start_idx + 1} - ${end} of ${queue.length}:`)
+        .setThumbnail(cur_queue[0].thumbnail);
+
+    let description = "";
+    cur_queue.forEach(((song, idx) => {
+        description += `**${start_idx + idx + 1}. [${song.title}](${song.url})**`;
+        description += `\n${song.author}`
+        if (idx + 1 < QUEUE_PAGE_SIZE) {
+            description += "\n\n";
+        }
+    }))
+    embed.setDescription(description);
+
+    return {
+        embeds: [embed],
+        components: [
+            new MessageActionRow()
+                .addComponents(
+                    new MessageButton()
+                        .setCustomId(INTERACTION_PREV_ID)
+                        .setLabel('Prev')
+                        .setStyle('PRIMARY')
+                        .setDisabled(start_idx == 0),
+                    new MessageButton()
+                        .setCustomId(INTERACTION_NEXT_ID)
+                        .setLabel('Next')
+                        .setStyle('PRIMARY')
+                        .setDisabled(end >= queue.length)
+                )
+        ]
+    };
 }
 
 export async function cachePlaylist(refresh = false) {

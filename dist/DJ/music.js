@@ -80,8 +80,6 @@ function playlist(discord_message, args) {
 }
 /**
  * Plays music!
- * @param discord_message
- * @param args
  */
 function play(discord_message, args, preshuffle) {
     return __awaiter(this, void 0, void 0, function* () {
@@ -202,24 +200,28 @@ function playSong(guild, song) {
     serverQueue.player.play(serverQueue.currentTrack);
 }
 function skip(discord_message, _args) {
-    const serverQueue = globalQueues.get(discord_message.guild.id);
-    if (!serverQueue)
-        return "Ni estoy tocando música";
-    if (!discord_message.member.voice.channel)
-        return "No mames, ni la estás oyendo";
-    const looping = serverQueue.loop;
-    serverQueue.loop = false;
-    serverQueue.player.stop();
-    serverQueue.loop = looping;
+    return __awaiter(this, void 0, void 0, function* () {
+        const serverQueue = globalQueues.get(discord_message.guild.id);
+        if (!serverQueue)
+            return "Ni estoy tocando música";
+        if (!discord_message.member.voice.channel)
+            return "No mames, ni la estás oyendo";
+        const looping = serverQueue.loop;
+        serverQueue.loop = false;
+        serverQueue.player.stop();
+        serverQueue.loop = looping;
+    });
 }
 function stop(discord_message, _args) {
-    const serverQueue = globalQueues.get(discord_message.guild.id);
-    if (!serverQueue)
-        return "Ni estoy tocando música";
-    if (!discord_message.member.voice.channel)
-        return "No mames, ni la estás oyendo";
-    serverQueue.songs = [];
-    serverQueue.player.stop();
+    return __awaiter(this, void 0, void 0, function* () {
+        const serverQueue = globalQueues.get(discord_message.guild.id);
+        if (!serverQueue)
+            return "Ni estoy tocando música";
+        if (!discord_message.member.voice.channel)
+            return "No mames, ni la estás oyendo";
+        serverQueue.songs = [];
+        serverQueue.player.stop();
+    });
 }
 function playtop(discord_message, args, status) {
     return __awaiter(this, void 0, void 0, function* () {
@@ -268,14 +270,16 @@ function playskip(discord_message, args) {
     });
 }
 function shuffle(discord_message, _args) {
-    let serverQueue = globalQueues.get(discord_message.guild.id);
-    if (!(serverQueue === null || serverQueue === void 0 ? void 0 : serverQueue.songs))
-        return "No hay ni madres aquí";
-    let songs = serverQueue.songs.slice(1);
-    songs = (0, utilities_1.shuffleArray)(songs);
-    songs.unshift(serverQueue.songs[0]);
-    serverQueue.songs = songs;
-    return "Shuffled 😩👌";
+    return __awaiter(this, void 0, void 0, function* () {
+        let serverQueue = globalQueues.get(discord_message.guild.id);
+        if (!(serverQueue === null || serverQueue === void 0 ? void 0 : serverQueue.songs))
+            return "No hay ni madres aquí";
+        let songs = serverQueue.songs.slice(1);
+        songs = (0, utilities_1.shuffleArray)(songs);
+        songs.unshift(serverQueue.songs[0]);
+        serverQueue.songs = songs;
+        return "Shuffled 😩👌";
+    });
 }
 function volume(discord_message, args) {
     return __awaiter(this, void 0, void 0, function* () {
@@ -316,18 +320,21 @@ function queue(discord_message, _args) {
         if (!(serverQueue === null || serverQueue === void 0 ? void 0 : serverQueue.songs)) {
             return "No hay ni madres aqui";
         }
-        const next10 = serverQueue.songs.slice(0, 11);
-        var msg = `Now playing: ${next10[0].title}\n${serverQueue.songs.length} in queue\nUp Next:\n`;
-        next10.forEach((song, idx) => {
-            if (idx > 0) {
-                msg = msg.concat(`${idx}: ${song.title}\n`);
+        let queue_idx = 0;
+        let sent = yield discord_message.channel.send(ytUitls.queueEmbed(serverQueue.songs, queue_idx));
+        const collector = discord_message.channel.createMessageComponentCollector({ time: 15000 });
+        collector.on('collect', (interaction) => __awaiter(this, void 0, void 0, function* () {
+            if (interaction.message.id !== sent.id)
+                return;
+            collector.resetTimer();
+            if (interaction.customId == ytUitls.INTERACTION_PREV_ID) {
+                queue_idx -= 10;
             }
-        });
-        // console.log(next10.length)
-        if (next10.length < 2) {
-            msg = msg.concat("Nada XD");
-        }
-        return msg;
+            if (interaction.customId == ytUitls.INTERACTION_NEXT_ID) {
+                queue_idx += 10;
+            }
+            yield interaction.update(ytUitls.queueEmbed(serverQueue.songs, queue_idx));
+        }));
     });
 }
 function loop(discord_message, args) {
