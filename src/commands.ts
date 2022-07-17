@@ -9,8 +9,8 @@ import d20 from 'd20';;
 import { config } from './config';
 import { replies } from './replies';
 import * as utilities from './utilities';
+import axios from 'axios';
 
-var copypastas = utilities.loadCopypastas(config.cp_files);
 var castigados: any[] = [];
 
 /**
@@ -21,24 +21,38 @@ type FunctionDictionary = { [key: string]: Function };
 export let commands: FunctionDictionary = {
     "copypasta": copypasta,
     "oraculo": oraculo,
-    "play": playMeme,
     "roll": roll,
     "castigar": castigar,
 }
 
 /**
  * Returns a random copypasta to send
- * @param discord_message
- * @param _args
  */
 async function copypasta(discord_message: Message, _args: string[]) {
-    return utilities.getRandom(copypastas);
+    try {
+        const res = await axios.get('https://www.reddit.com/r/copypasta/random.json');
+
+        const title = res.data[0].data.children[0].data.title;
+        const text = res.data[0].data.children[0].data.selftext;
+
+        const msg = `**${title}**\n${text}`;
+
+        for (let i = 0; i < msg.length; i += 2000) {
+            const chunk = msg.slice(i, i + 2000);
+            await discord_message.channel.send(chunk);
+        }
+    }
+    catch (err) {
+        console.error(err);
+        return "lmao algo salio mal"
+    }
+
 }
 
 /**
+ * @deprecated
+ * good meme, stays here
  * 20% chance to send music meme or random reply from the "cumbia" array in replies.json
- * @param discord_message
- * @param _args
  */
 async function playMeme(discord_message: Message, _args: string[]): Promise<MessageOptions | string> {
     if (utilities.randBool(.2)) {
@@ -57,8 +71,6 @@ async function playMeme(discord_message: Message, _args: string[]): Promise<Mess
 
 /**
  * Sends a random reply from the "oraculo" array in replies.json
- * @param {message} discord_message
- * @param {[String]} args
  */
 async function oraculo(discord_message: Message, _args: string[]) {
     discord_message.reply(utilities.getRandom(replies.oraculo));
@@ -67,8 +79,6 @@ async function oraculo(discord_message: Message, _args: string[]) {
 /**
  * Rolls the corresponding dice to the first argument
  * See https://www.npmjs.com/package/d20 for more info
- * @param discord_message
- * @param args
  */
 async function roll(discord_message: Message, args: string[]) {
     if (args[0]) {
@@ -84,8 +94,6 @@ async function roll(discord_message: Message, args: string[]) {
  * Sends people to the purgatory channel, can send multiple people if they are all
  * mentioned in the same message. After 30 seconds returns them to their original
  * voice channel.
- * @param discord_message
- * @param _args
  */
 async function castigar(discord_message: Message, _args: string[]) {
     const users: User[] = discord_message.mentions.users.toJSON();
@@ -108,10 +116,10 @@ async function castigar(discord_message: Message, _args: string[]) {
         });
 
         if (members.length > 1) {
-            discord_message.channel.send("Castigados, papu");
+            discord_message.channel.send("Castigados");
         }
         else {
-            discord_message.channel.send("Castigado, papu");
+            discord_message.channel.send("Castigado");
         }
 
         await utilities.sleep(30);
@@ -126,10 +134,10 @@ async function castigar(discord_message: Message, _args: string[]) {
             }
         });
         if (sentBack > 1) {
-            discord_message.channel.send("Descastigados, papu");
+            discord_message.channel.send("Descastigados");
         }
         else {
-            discord_message.channel.send("Descastigado, papu");
+            discord_message.channel.send("Descastigado");
         }
         return null;
 

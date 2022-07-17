@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.musicPlay = exports.reactions = exports.replies = void 0;
+exports.reactions = exports.replies = void 0;
 exports.replies = {
     memes: {
         "ayy": "lmao",
@@ -72,6 +72,7 @@ exports.reactions = [
             "hentai",
             "porno",
             "me vine",
+            "cum",
             "\\d+\\.\\d+\\.\\d+\\.\\d+"
         ]
     },
@@ -93,16 +94,6 @@ exports.reactions = [
         ]
     },
     {
-        "emoji": "769719880983248916",
-        "triggers": [
-            "sanes",
-            "sans",
-            "megalo",
-            "mogolo",
-            "bad time"
-        ]
-    },
-    {
         "emoji": "840005765376114699",
         "triggers": [
             "sus",
@@ -111,14 +102,4 @@ exports.reactions = [
             "get out of my head"
         ]
     }
-];
-exports.musicPlay = [
-    "Banger",
-    "😩👌",
-    "&loop jkjk unless...",
-    "&skip lmao",
-    "Mejor pongan megalos",
-    "Te la voy a tocar",
-    "Dime donde te la toco",
-    "Feliz dia del payaso",
 ];

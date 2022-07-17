@@ -71,6 +71,7 @@ export let reactions = [
             "hentai",
             "porno",
             "me vine",
+            "cum",
             "\\d+\\.\\d+\\.\\d+\\.\\d+"
         ]
     },
@@ -92,16 +93,6 @@ export let reactions = [
         ]
     },
     {
-        "emoji": "769719880983248916",
-        "triggers": [
-            "sanes",
-            "sans",
-            "megalo",
-            "mogolo",
-            "bad time"
-        ]
-    },
-    {
         "emoji": "840005765376114699",
         "triggers": [
             "sus",
@@ -110,17 +101,4 @@ export let reactions = [
             "get out of my head"
         ]
     }
-]
-
-export const musicPlay = [
-    "Banger",
-    "😩👌",
-    "&loop jkjk unless...",
-
-    "&skip lmao",
-    "Mejor pongan megalos",
-
-    "Te la voy a tocar",
-    "Dime donde te la toco",
-    "Feliz dia del payaso",
 ]
