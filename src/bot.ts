@@ -10,7 +10,7 @@ const voiceStatus = VoiceStatusEventEmitter.getInstance();
 
 function replyTo(this: Bot, discord_message: Message) {
     const bot = Bot.getInstance()
-    if (discord_message.author.id == bot.user?.id) {
+    if (discord_message.author.id == bot.user?.id || discord_message.author.bot) {
         return;
     }
     //reply to messages
@@ -55,7 +55,10 @@ async function handle(command: string, args: string[], discord_message: Message)
     if (commands[command]) {
         let message = await commands[command](discord_message, args)
         if (message) {
-            discord_message.channel.send(message);
+            discord_message.channel.send(message).catch(err => {
+                console.error("lmao error enviando mensaje")
+                console.error(err);
+            });
         }
     }
 }

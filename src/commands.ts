@@ -7,7 +7,7 @@
 import { Message, GuildMember, User, MessageEmbed, MessageOptions } from "discord.js";
 import d20 from 'd20';;
 import { config } from './config';
-import { replies } from './replies';
+import { EmojifyMap, replies } from './replies';
 import * as utilities from './utilities';
 import axios from 'axios';
 
@@ -23,6 +23,7 @@ export let commands: FunctionDictionary = {
     "oraculo": oraculo,
     "roll": roll,
     "castigar": castigar,
+    "emojify": emojify,
 }
 
 /**
@@ -145,4 +146,30 @@ async function castigar(discord_message: Message, _args: string[]) {
     else {
         return "No esté chingando";
     }
+}
+
+async function emojify(discord_message: Message, args: string[]): Promise<string> {
+    let original: string;
+    if (discord_message.reference) {
+        const ref = await discord_message.fetchReference();
+        original = ref.content;
+    }
+    else if (args.length > 0) {
+        original = args.join(' ');
+    }
+    else {
+        return "reply or msg XD";
+    }
+
+    let emojified = "";
+    for (let char of original.toLowerCase()) {
+        const emoji = EmojifyMap[char] || char;
+
+        // dont add any more if length exceeds max
+        if (emojified.length + emoji.length > 2000) break;
+
+        emojified += emoji;
+    }
+
+    return emojified;
 }

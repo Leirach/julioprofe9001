@@ -20,7 +20,7 @@ const voiceStatus = voiceChannelEvents_1.VoiceStatusEventEmitter.getInstance();
 function replyTo(discord_message) {
     var _a;
     const bot = botClass_1.Bot.getInstance();
-    if (discord_message.author.id == ((_a = bot.user) === null || _a === void 0 ? void 0 : _a.id)) {
+    if (discord_message.author.id == ((_a = bot.user) === null || _a === void 0 ? void 0 : _a.id) || discord_message.author.bot) {
         return;
     }
     //reply to messages
@@ -60,7 +60,10 @@ function handle(command, args, discord_message) {
         if (commands_1.commands[command]) {
             let message = yield commands_1.commands[command](discord_message, args);
             if (message) {
-                discord_message.channel.send(message);
+                discord_message.channel.send(message).catch(err => {
+                    console.error("lmao error enviando mensaje");
+                    console.error(err);
+                });
             }
         }
     });

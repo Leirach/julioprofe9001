@@ -51,6 +51,7 @@ exports.commands = {
     "oraculo": oraculo,
     "roll": roll,
     "castigar": castigar,
+    "emojify": emojify,
 };
 /**
  * Returns a random copypasta to send
@@ -171,5 +172,29 @@ function castigar(discord_message, _args) {
         else {
             return "No esté chingando";
         }
+    });
+}
+function emojify(discord_message, args) {
+    return __awaiter(this, void 0, void 0, function* () {
+        let original;
+        if (discord_message.reference) {
+            const ref = yield discord_message.fetchReference();
+            original = ref.content;
+        }
+        else if (args.length > 0) {
+            original = args.join(' ');
+        }
+        else {
+            return "reply or msg XD";
+        }
+        let emojified = "";
+        for (let char of original.toLowerCase()) {
+            const emoji = replies_1.EmojifyMap[char] || char;
+            // dont add any more if length exceeds max
+            if (emojified.length + emoji.length > 2000)
+                break;
+            emojified += emoji;
+        }
+        return emojified;
     });
 }
