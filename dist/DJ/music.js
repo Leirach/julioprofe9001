@@ -159,6 +159,7 @@ function play(discord_message, args, preshuffle) {
 function playSong(guild, song) {
     const serverQueue = globalQueues.get(guild.id);
     if (!song) {
+        serverQueue.subscription.unsubscribe();
         serverQueue.connection.destroy();
         globalQueues.delete(guild.id);
         return;
@@ -172,7 +173,7 @@ function playSong(guild, song) {
     serverQueue.currentTrack.volume.setVolumeLogarithmic(vol / 5);
     if (!serverQueue.player) {
         serverQueue.player = (0, voice_1.createAudioPlayer)();
-        serverQueue.connection.subscribe(serverQueue.player);
+        serverQueue.subscription = serverQueue.connection.subscribe(serverQueue.player);
         serverQueue.player.on("stateChange", (state) => {
             console.log(state.status);
             console.log(serverQueue.currentTrack.ended);

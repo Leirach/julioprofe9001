@@ -23,9 +23,11 @@ class QueueContract {
         this.loop = false;
     }
     disconnect() {
-        this.player.off('stateChange', () => { });
+        this.player.removeAllListeners('stateChange');
         this.songs = [];
         this.player.stop();
+        this.subscription.unsubscribe();
+        this.connection.disconnect();
         this.connection.destroy();
     }
 }

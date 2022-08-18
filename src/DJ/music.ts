@@ -128,6 +128,7 @@ async function play(discord_message: Message, args: string[], preshuffle?: boole
 function playSong(guild: Guild, song: any) {
     const serverQueue = globalQueues.get(guild.id);
     if (!song) {
+        serverQueue.subscription.unsubscribe();
         serverQueue.connection.destroy();
         globalQueues.delete(guild.id);
         return;
@@ -142,7 +143,7 @@ function playSong(guild: Guild, song: any) {
 
     if (!serverQueue.player) {
         serverQueue.player = createAudioPlayer();
-        serverQueue.connection.subscribe(serverQueue.player);
+        serverQueue.subscription = serverQueue.connection.subscribe(serverQueue.player);
         serverQueue.player.on("stateChange", (state) => {
             console.log(state.status);
             console.log(serverQueue.currentTrack.ended);

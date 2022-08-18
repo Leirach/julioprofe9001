@@ -1,5 +1,5 @@
 import { Message, VoiceChannel, Collection, TextBasedChannels } from "discord.js";
-import { AudioPlayer, AudioResource, VoiceConnection } from "@discordjs/voice";
+import { AudioPlayer, AudioResource, PlayerSubscription, VoiceConnection } from "@discordjs/voice";
 
 export class Song {
     title: string;
@@ -28,6 +28,7 @@ export class QueueContract {
     playing: boolean;
     loop: boolean;
     currentTrack: AudioResource;
+    subscription: PlayerSubscription;
 
     constructor(discord_message: Message, voiceChannel: VoiceChannel) {
         this.textChannel = discord_message.channel;
@@ -41,9 +42,11 @@ export class QueueContract {
     }
 
     disconnect() {
-        this.player.off('stateChange', () => {});
+        this.player.removeAllListeners('stateChange');
         this.songs = [];
         this.player.stop();
+        this.subscription.unsubscribe();
+        this.connection.disconnect();
         this.connection.destroy();
     }
 }
