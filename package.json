@@ -25,7 +25,7 @@
     "googleapis": "^61.0.0",
     "libsodium-wrappers": "^0.7.9",
     "luxon": "^2.0.2",
-    "ytdl-core": "^4.9.1"
+    "ytdl-core": "^4.11.2"
   },
   "devDependencies": {
     "@types/d20": "^1.4.0",
