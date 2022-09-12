@@ -101,6 +101,15 @@ exports.reactions = [
             "amongus",
             "get out of my head"
         ]
+    },
+    {
+        "emoji": "1017949731097423944",
+        "triggers": [
+            "chtm",
+            "piolin",
+            "joto",
+            "caile"
+        ]
     }
 ];
 exports.EmojifyMap = {
