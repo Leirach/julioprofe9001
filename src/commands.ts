@@ -24,6 +24,7 @@ export let commands: FunctionDictionary = {
     "roll": roll,
     "castigar": castigar,
     "emojify": emojify,
+    "random": pingRandom
 }
 
 /**
@@ -172,4 +173,17 @@ async function emojify(discord_message: Message, args: string[]): Promise<string
     }
 
     return emojified;
+}
+
+/**
+ * Pings random online member
+ */
+async function pingRandom(discord_message: Message, _args: string[]) {
+    const guild = discord_message.guild;
+
+    const members = await guild.members.fetch();
+
+    var online = members.filter(m => m.presence?.status == "online");
+
+    return `<@${online.random().user.id}>`;
 }
