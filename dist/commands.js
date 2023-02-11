@@ -52,6 +52,7 @@ exports.commands = {
     "roll": roll,
     "castigar": castigar,
     "emojify": emojify,
+    "random": pingRandom
 };
 /**
  * Returns a random copypasta to send
@@ -196,5 +197,16 @@ function emojify(discord_message, args) {
             emojified += emoji;
         }
         return emojified;
+    });
+}
+/**
+ * Pings random online member
+ */
+function pingRandom(discord_message, _args) {
+    return __awaiter(this, void 0, void 0, function* () {
+        const guild = discord_message.guild;
+        const members = yield guild.members.fetch();
+        var online = members.filter(m => { var _a; return ((_a = m.presence) === null || _a === void 0 ? void 0 : _a.status) == "online"; });
+        return `<@${online.random().user.id}>`;
     });
 }
