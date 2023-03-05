@@ -1,7 +1,11 @@
 "use strict";
 var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
-    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
 }) : (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
     o[k2] = m[k];
@@ -32,13 +36,6 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.commands = void 0;
-/**
- * Command functions for the bot, keywords for commands are preceded by '!'.
- * Any message that needs to be sent and is not a reply can must be returned by
- * the function. Embeds can be return as long as it can be sent via the
- * channel.send() function.
- */
-const discord_js_1 = require("discord.js");
 const d20_1 = __importDefault(require("d20"));
 ;
 const config_1 = require("./config");
@@ -76,27 +73,6 @@ function copypasta(discord_message, _args) {
     });
 }
 /**
- * @deprecated
- * good meme, stays here
- * 20% chance to send music meme or random reply from the "cumbia" array in replies.json
- */
-function playMeme(discord_message, _args) {
-    return __awaiter(this, void 0, void 0, function* () {
-        if (utilities.randBool(.2)) {
-            return utilities.getRandom(replies_1.replies.cumbia);
-        }
-        else if (utilities.randBool(.2)) {
-            const embed = new discord_js_1.MessageEmbed()
-                .setAuthor('Now Playing♪', 'https://images-ext-2.discordapp.net/external/2fG56UtfyTSowWQ6HhhPIV9VrZoD_OcVdHVwWpu6rIY/https/rythmbot.co/rythm.gif', 'https://chtm.joto')
-                .setDescription("Cumbia Poder\n\n▬▬▬▬▬▬▬▬▬▬▬▬▬🔘▬▬▬▬▬▬\n\n04:20/05:69\n\nRequested by: Sero4")
-                .setThumbnail('https://is4-ssl.mzstatic.com/image/thumb/Music/v4/46/aa/43/46aa4332-829b-84e6-9605-c6e183f6ca36/source/1200x1200bb.jpg');
-            return {
-                embeds: [embed]
-            };
-        }
-    });
-}
-/**
  * Sends a random reply from the "oraculo" array in replies.json
  */
 function oraculo(discord_message, _args) {
@@ -124,6 +100,7 @@ function roll(discord_message, args) {
  * mentioned in the same message. After 30 seconds returns them to their original
  * voice channel.
  */
+//TODO: refactor
 function castigar(discord_message, _args) {
     var _a, _b;
     return __awaiter(this, void 0, void 0, function* () {

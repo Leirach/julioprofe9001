@@ -4,7 +4,7 @@
  * the function. Embeds can be return as long as it can be sent via the
  * channel.send() function.
  */
-import { Message, GuildMember, User, MessageEmbed, MessageOptions } from "discord.js";
+import { Message, GuildMember, User, TextChannel } from "discord.js";
 import d20 from 'd20';;
 import { config } from './config';
 import { EmojifyMap, replies } from './replies';
@@ -41,7 +41,7 @@ async function copypasta(discord_message: Message, _args: string[]) {
 
         for (let i = 0; i < msg.length; i += 2000) {
             const chunk = msg.slice(i, i + 2000);
-            await discord_message.channel.send(chunk);
+            await (discord_message.channel as TextChannel).send(chunk);
         }
     }
     catch (err) {
@@ -49,26 +49,6 @@ async function copypasta(discord_message: Message, _args: string[]) {
         return "lmao algo salio mal"
     }
 
-}
-
-/**
- * @deprecated
- * good meme, stays here
- * 20% chance to send music meme or random reply from the "cumbia" array in replies.json
- */
-async function playMeme(discord_message: Message, _args: string[]): Promise<MessageOptions | string> {
-    if (utilities.randBool(.2)) {
-        return utilities.getRandom(replies.cumbia);
-    }
-    else if (utilities.randBool(.2)) {
-        const embed = new MessageEmbed()
-            .setAuthor('Now Playing♪', 'https://images-ext-2.discordapp.net/external/2fG56UtfyTSowWQ6HhhPIV9VrZoD_OcVdHVwWpu6rIY/https/rythmbot.co/rythm.gif', 'https://chtm.joto')
-            .setDescription("Cumbia Poder\n\n▬▬▬▬▬▬▬▬▬▬▬▬▬🔘▬▬▬▬▬▬\n\n04:20/05:69\n\nRequested by: Sero4")
-            .setThumbnail('https://is4-ssl.mzstatic.com/image/thumb/Music/v4/46/aa/43/46aa4332-829b-84e6-9605-c6e183f6ca36/source/1200x1200bb.jpg')
-        return {
-            embeds: [embed]
-        }
-    }
 }
 
 /**
@@ -97,6 +77,7 @@ async function roll(discord_message: Message, args: string[]) {
  * mentioned in the same message. After 30 seconds returns them to their original
  * voice channel.
  */
+//TODO: refactor
 async function castigar(discord_message: Message, _args: string[]) {
     const users: User[] = discord_message.mentions.users.toJSON();
     let members: (GuildMember | null | undefined)[] = [];
@@ -118,10 +99,10 @@ async function castigar(discord_message: Message, _args: string[]) {
         });
 
         if (members.length > 1) {
-            discord_message.channel.send("Castigados");
+            (discord_message.channel as TextChannel).send("Castigados");
         }
         else {
-            discord_message.channel.send("Castigado");
+            (discord_message.channel as TextChannel).send("Castigado");
         }
 
         await utilities.sleep(30);
@@ -136,10 +117,10 @@ async function castigar(discord_message: Message, _args: string[]) {
             }
         });
         if (sentBack > 1) {
-            discord_message.channel.send("Descastigados");
+            (discord_message.channel as TextChannel).send("Descastigados");
         }
         else {
-            discord_message.channel.send("Descastigado");
+            (discord_message.channel as TextChannel).send("Descastigado");
         }
         return null;
 

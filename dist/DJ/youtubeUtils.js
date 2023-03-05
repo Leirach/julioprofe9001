@@ -20,6 +20,7 @@ const config_1 = require("../config");
 const fs_1 = __importDefault(require("fs"));
 const readline_1 = __importDefault(require("readline"));
 const discord_js_1 = require("discord.js");
+// TODO: separate utils by type
 exports.INTERACTION_PREV_ID = 'queue_prev';
 exports.INTERACTION_NEXT_ID = 'queue_next';
 const youtube = googleapis_1.google.youtube('v3');
@@ -164,12 +165,12 @@ function songEmbed(title, song, streamTime) {
     else {
         timestamp = tTime.toFormat(format);
     }
-    let embed = new discord_js_1.MessageEmbed()
-        .setAuthor(`${title}:`, config_1.config.avatarUrl)
+    let embed = new discord_js_1.EmbedBuilder()
+        .setAuthor({ name: `${title}:`, iconURL: config_1.config.avatarUrl })
         .setTitle(song.title)
         .setURL(song.url)
         .setThumbnail(config_1.config.avatarUrl)
-        .addField(song.author, `${timestamp} Volume: ${getVolume(song.url)}`)
+        .addFields([{ name: song.author, value: `${timestamp} Volume: ${getVolume(song.url)}` }])
         .setImage(song.thumbnail);
     return { embeds: [embed] };
 }
@@ -177,8 +178,8 @@ exports.songEmbed = songEmbed;
 function queueEmbed(queue, start_idx) {
     const end = start_idx + QUEUE_PAGE_SIZE;
     const cur_queue = queue.slice(start_idx, end);
-    let embed = new discord_js_1.MessageEmbed()
-        .setAuthor(`Queue`, config_1.config.avatarUrl)
+    let embed = new discord_js_1.EmbedBuilder()
+        .setAuthor({ name: `Queue`, iconURL: config_1.config.avatarUrl })
         .setTitle(`${start_idx + 1} - ${end} of ${queue.length}:`)
         .setThumbnail(cur_queue[0].thumbnail);
     let description = "";
@@ -193,15 +194,16 @@ function queueEmbed(queue, start_idx) {
     return {
         embeds: [embed],
         components: [
-            new discord_js_1.MessageActionRow()
-                .addComponents(new discord_js_1.MessageButton()
+            // TODO: what the fuck is this yo
+            new discord_js_1.ActionRowBuilder()
+                .addComponents(new discord_js_1.ButtonBuilder()
                 .setCustomId(exports.INTERACTION_PREV_ID)
                 .setLabel('Prev')
-                .setStyle('PRIMARY')
-                .setDisabled(start_idx == 0), new discord_js_1.MessageButton()
+                .setStyle(discord_js_1.ButtonStyle.Primary)
+                .setDisabled(start_idx == 0), new discord_js_1.ButtonBuilder()
                 .setCustomId(exports.INTERACTION_NEXT_ID)
                 .setLabel('Next')
-                .setStyle('PRIMARY')
+                .setStyle(discord_js_1.ButtonStyle.Primary)
                 .setDisabled(end >= queue.length))
         ]
     };

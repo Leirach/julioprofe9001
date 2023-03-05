@@ -1,7 +1,11 @@
 "use strict";
 var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
-    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
 }) : (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
     o[k2] = m[k];
@@ -41,6 +45,7 @@ const utilities_1 = require("../utilities");
 const config_1 = require("../config");
 const GlobalQueueMap_1 = require("./GlobalQueueMap");
 const botClass_1 = require("../botClass");
+//TODO: separate file into different commands/utils or something else
 const bufferSize = 1 << 25;
 let globalQueues = GlobalQueueMap_1.GlobalQueueManager.getInstance();
 exports.musicCommands = {
@@ -88,7 +93,7 @@ function play(discord_message, args, preshuffle) {
         if (!voiceChannel)
             return "No estás conectado en vc";
         const permissions = voiceChannel.permissionsFor(bot.user.id);
-        if (!permissions.has("CONNECT") || !permissions.has("SPEAK")) {
+        if (!permissions.has(discord_js_1.PermissionFlagsBits.Connect) || !permissions.has(discord_js_1.PermissionFlagsBits.Speak)) {
             return "Necesito permisos para conectar en ese canal";
         }
         // tries to parse url
@@ -156,6 +161,7 @@ function play(discord_message, args, preshuffle) {
         }
     });
 }
+// TODO: better logs here
 function playSong(guild, song) {
     const serverQueue = globalQueues.get(guild.id);
     if (!song) {
@@ -166,17 +172,25 @@ function playSong(guild, song) {
     }
     // Help, im only supposed to increase this param in ytdl and i dont even know why
     // { highWaterMark: 1024 * 1024 * 10 } // 10mb buffer, supposedly
-    console.log("getting ytdl song");
-    serverQueue.currentTrack = (0, voice_1.createAudioResource)((0, ytdl_core_1.default)(song.url, { filter: 'audioonly', highWaterMark: bufferSize }), { inlineVolume: true });
-    console.log("ytdl got");
+    const stream = (0, ytdl_core_1.default)(song.url, { filter: 'audioonly', highWaterMark: bufferSize });
+    serverQueue.currentTrack = (0, voice_1.createAudioResource)(stream, { inlineVolume: true });
     let vol = ytUitls.getVolume(song.url);
     serverQueue.currentTrack.volume.setVolumeLogarithmic(vol / 5);
     if (!serverQueue.player) {
         serverQueue.player = (0, voice_1.createAudioPlayer)();
         serverQueue.subscription = serverQueue.connection.subscribe(serverQueue.player);
-        serverQueue.player.on("stateChange", (state) => {
-            console.log(state.status);
-            console.log(serverQueue.currentTrack.ended);
+        serverQueue.connection.on("stateChange", (oldState, newState) => {
+            const oldNetworking = Reflect.get(oldState, 'networking');
+            const newNetworking = Reflect.get(newState, 'networking');
+            const networkStateChangeHandler = (oldNetworkState, newNetworkState) => {
+                const newUdp = Reflect.get(newNetworkState, 'udp');
+                clearInterval(newUdp === null || newUdp === void 0 ? void 0 : newUdp.keepAliveInterval);
+            };
+            oldNetworking === null || oldNetworking === void 0 ? void 0 : oldNetworking.off('stateChange', networkStateChangeHandler);
+            newNetworking === null || newNetworking === void 0 ? void 0 : newNetworking.on('stateChange', networkStateChangeHandler);
+        });
+        serverQueue.player.on("stateChange", (oldState, newState) => {
+            console.log("Status: " + newState.status);
             if (serverQueue.currentTrack.ended) {
                 if (!serverQueue.loop)
                     serverQueue.lastPlayed = serverQueue.songs.shift();
@@ -186,8 +200,8 @@ function playSong(guild, song) {
             .on("error", (error) => {
             console.error(error);
             let np = serverQueue.songs.shift();
-            let embed = new discord_js_1.MessageEmbed()
-                .setAuthor("No se puede reproducir:", config_1.config.avatarUrl)
+            let embed = new discord_js_1.EmbedBuilder()
+                .setAuthor({ name: "No se puede reproducir:", url: config_1.config.avatarUrl })
                 .setTitle(np.title)
                 .setURL(np.url)
                 .setDescription(`Razon: ${error.message}`)
@@ -197,7 +211,6 @@ function playSong(guild, song) {
             playSong(guild, serverQueue.songs[0]);
         });
     }
-    console.log("playing track here");
     serverQueue.player.play(serverQueue.currentTrack);
 }
 function skip(discord_message, _args) {
@@ -224,6 +237,7 @@ function stop(discord_message, _args) {
         serverQueue.player.stop();
     });
 }
+// TODO: better returns here
 function playtop(discord_message, args, status) {
     return __awaiter(this, void 0, void 0, function* () {
         const serverQueue = globalQueues.get(discord_message.guild.id);

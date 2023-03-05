@@ -1,4 +1,4 @@
-import { Message, TextBasedChannels } from "discord.js";
+import { Message, TextChannel } from "discord.js";
 import { replies, reactions } from './replies';
 import { commands } from './commands';
 import { musicCommands } from './DJ/music';
@@ -32,12 +32,12 @@ function replyTo(this: Bot, discord_message: Message) {
             handle(command, words.slice(idx + 1), discord_message);
         }
 
-        respond(word, discord_message.channel);
+        respond(word, discord_message.channel as TextChannel);
     });
     react(discord_message);
 }
 
-function respond(word: string, channel: TextBasedChannels) {
+function respond(word: string, channel: TextChannel) {
     //remove non-alpha chars
     word = word.replace(/[^a-z]/g, "");
 
@@ -55,7 +55,7 @@ async function handle(command: string, args: string[], discord_message: Message)
     if (commands[command]) {
         let message = await commands[command](discord_message, args)
         if (message) {
-            discord_message.channel.send(message).catch(err => {
+            (discord_message.channel as TextChannel).send(message).catch(err => {
                 console.error("lmao error enviando mensaje")
                 console.error(err);
             });
@@ -67,7 +67,7 @@ async function djJulio(command: string, args: string[], discord_message: Message
     if (musicCommands[command]) {
         let message = await musicCommands[command](discord_message, args)
         if (message) {
-            discord_message.channel.send(message);
+            (discord_message.channel as TextChannel).send(message);
         }
     }
 }

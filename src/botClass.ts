@@ -1,4 +1,4 @@
-import { Client, ClientOptions, Intents } from "discord.js";
+import { Client, ClientOptions, GatewayIntentBits  } from "discord.js";
 
 export class Bot extends Client {
     private static instance: Bot;
@@ -11,12 +11,13 @@ export class Bot extends Client {
         if (!this.instance) {
             this.instance = new Bot({
                 intents: [
-                    Intents.FLAGS.GUILDS,
-                    Intents.FLAGS.DIRECT_MESSAGES,
-                    Intents.FLAGS.GUILD_MESSAGES,
-                    Intents.FLAGS.GUILD_VOICE_STATES,
-                    Intents.FLAGS.GUILD_MEMBERS,
-                    Intents.FLAGS.GUILD_PRESENCES
+                    GatewayIntentBits.Guilds,
+                    GatewayIntentBits.DirectMessages,
+                    GatewayIntentBits.MessageContent,
+                    GatewayIntentBits.GuildMessages,
+                    GatewayIntentBits.GuildVoiceStates,
+                    GatewayIntentBits.GuildMembers,
+                    GatewayIntentBits.GuildPresences,
                 ],
             });
         }

@@ -4,7 +4,9 @@ import { Duration } from 'luxon';
 import { config } from '../config';
 import fs from 'fs';
 import readline from 'readline';
-import { MessageActionRow, MessageButton, MessageEmbed, MessageOptions } from 'discord.js';
+import { MessageCreateOptions, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
+
+// TODO: separate utils by type
 
 export const INTERACTION_PREV_ID = 'queue_prev';
 export const INTERACTION_NEXT_ID = 'queue_next';
@@ -152,7 +154,7 @@ export async function getSongs(url: string) {
 }
 
 // Utilities
-export function songEmbed(title: string, song: Song, streamTime: number): MessageOptions {
+export function songEmbed(title: string, song: Song, streamTime: number): MessageCreateOptions {
     let ltime = Duration.fromMillis(streamTime);
     let tTime = Duration.fromISO(song.duration);
     let format = tTime.as('hours') < 1 ? 'mm:ss' : 'hh:mm:ss';
@@ -164,22 +166,22 @@ export function songEmbed(title: string, song: Song, streamTime: number): Messag
         timestamp = tTime.toFormat(format);
     }
 
-    let embed = new MessageEmbed()
-        .setAuthor(`${title}:`, config.avatarUrl)
+    let embed = new EmbedBuilder()
+        .setAuthor({ name: `${title}:`, iconURL: config.avatarUrl })
         .setTitle(song.title)
         .setURL(song.url)
         .setThumbnail(config.avatarUrl)
-        .addField(song.author, `${timestamp} Volume: ${getVolume(song.url)}`)
+        .addFields([{name: song.author, value: `${timestamp} Volume: ${getVolume(song.url)}`}])
         .setImage(song.thumbnail);
     return { embeds: [embed] };
 }
 
-export function queueEmbed(queue: Song[], start_idx: number): MessageOptions {
+export function queueEmbed(queue: Song[], start_idx: number): MessageCreateOptions {
     const end = start_idx + QUEUE_PAGE_SIZE;
     const cur_queue = queue.slice(start_idx, end);
 
-    let embed = new MessageEmbed()
-        .setAuthor(`Queue`, config.avatarUrl)
+    let embed = new EmbedBuilder()
+        .setAuthor({ name: `Queue`, iconURL: config.avatarUrl })
         .setTitle(`${start_idx + 1} - ${end} of ${queue.length}:`)
         .setThumbnail(cur_queue[0].thumbnail);
 
@@ -196,17 +198,18 @@ export function queueEmbed(queue: Song[], start_idx: number): MessageOptions {
     return {
         embeds: [embed],
         components: [
-            new MessageActionRow()
+            // TODO: what the fuck is this yo
+            new ActionRowBuilder<any>()
                 .addComponents(
-                    new MessageButton()
+                    new ButtonBuilder()
                         .setCustomId(INTERACTION_PREV_ID)
                         .setLabel('Prev')
-                        .setStyle('PRIMARY')
+                        .setStyle(ButtonStyle.Primary)
                         .setDisabled(start_idx == 0),
-                    new MessageButton()
+                    new ButtonBuilder()
                         .setCustomId(INTERACTION_NEXT_ID)
                         .setLabel('Next')
-                        .setStyle('PRIMARY')
+                        .setStyle(ButtonStyle.Primary)
                         .setDisabled(end >= queue.length)
                 )
         ]

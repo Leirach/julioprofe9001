@@ -10,12 +10,13 @@ class Bot extends discord_js_1.Client {
         if (!this.instance) {
             this.instance = new Bot({
                 intents: [
-                    discord_js_1.Intents.FLAGS.GUILDS,
-                    discord_js_1.Intents.FLAGS.DIRECT_MESSAGES,
-                    discord_js_1.Intents.FLAGS.GUILD_MESSAGES,
-                    discord_js_1.Intents.FLAGS.GUILD_VOICE_STATES,
-                    discord_js_1.Intents.FLAGS.GUILD_MEMBERS,
-                    discord_js_1.Intents.FLAGS.GUILD_PRESENCES
+                    discord_js_1.GatewayIntentBits.Guilds,
+                    discord_js_1.GatewayIntentBits.DirectMessages,
+                    discord_js_1.GatewayIntentBits.MessageContent,
+                    discord_js_1.GatewayIntentBits.GuildMessages,
+                    discord_js_1.GatewayIntentBits.GuildVoiceStates,
+                    discord_js_1.GatewayIntentBits.GuildMembers,
+                    discord_js_1.GatewayIntentBits.GuildPresences,
                 ],
             });
         }

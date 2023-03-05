@@ -1,4 +1,4 @@
-import { Message, Collection, Guild, MessageEmbed, VoiceChannel, MessageOptions } from "discord.js";
+import { Message, Guild, EmbedBuilder, VoiceChannel, PermissionFlagsBits, TextChannel, MessageCreateOptions } from "discord.js";
 import { joinVoiceChannel, createAudioResource, createAudioPlayer } from '@discordjs/voice';
 import ytdl from 'ytdl-core';
 import { QueueContract, Song } from './musicClasses';
@@ -8,11 +8,13 @@ import { config } from '../config'
 import { GlobalQueueManager } from "./GlobalQueueMap";
 import { Bot } from "../botClass";
 
+//TODO: separate file into different commands/utils or something else
+
 const bufferSize = 1 << 25;
 
 let globalQueues = GlobalQueueManager.getInstance();
 
-type FunctionDictionary = { [key: string]: (...args: any) => Promise<MessageOptions | string> };
+type FunctionDictionary = { [key: string]: (...args: any) => Promise<MessageCreateOptions | string> };
 export let musicCommands: FunctionDictionary = {
     "play": play,
     "queue": queue,
@@ -49,13 +51,13 @@ async function playlist(discord_message: Message, args: string[]) {
 /**
  * Plays music!
  */
-async function play(discord_message: Message, args: string[], preshuffle?: boolean): Promise<MessageOptions | string> {
+async function play(discord_message: Message, args: string[], preshuffle?: boolean): Promise<MessageCreateOptions | string> {
     const bot = Bot.getInstance();
     const voiceChannel = discord_message.member.voice.channel;
     if (!voiceChannel)
         return "No estás conectado en vc";
     const permissions = voiceChannel.permissionsFor(bot.user.id);
-    if (!permissions.has("CONNECT") || !permissions.has("SPEAK")) {
+    if (!permissions.has(PermissionFlagsBits.Connect) || !permissions.has(PermissionFlagsBits.Speak)) {
         return "Necesito permisos para conectar en ese canal";
     }
 
@@ -124,7 +126,7 @@ async function play(discord_message: Message, args: string[], preshuffle?: boole
         return "Lmao no me pude conectar"
     }
 }
-
+// TODO: better logs here
 function playSong(guild: Guild, song: any) {
     const serverQueue = globalQueues.get(guild.id);
     if (!song) {
@@ -135,18 +137,30 @@ function playSong(guild: Guild, song: any) {
     }
     // Help, im only supposed to increase this param in ytdl and i dont even know why
     // { highWaterMark: 1024 * 1024 * 10 } // 10mb buffer, supposedly
-    console.log("getting ytdl song");
-    serverQueue.currentTrack = createAudioResource(ytdl(song.url, { filter: 'audioonly', highWaterMark: bufferSize }), { inlineVolume: true });
-    console.log("ytdl got");
+    const stream = ytdl(song.url, { filter: 'audioonly', highWaterMark: bufferSize });
+    serverQueue.currentTrack = createAudioResource(stream, { inlineVolume: true });
     let vol = ytUitls.getVolume(song.url);
     serverQueue.currentTrack.volume.setVolumeLogarithmic(vol / 5);
 
     if (!serverQueue.player) {
         serverQueue.player = createAudioPlayer();
         serverQueue.subscription = serverQueue.connection.subscribe(serverQueue.player);
-        serverQueue.player.on("stateChange", (state) => {
-            console.log(state.status);
-            console.log(serverQueue.currentTrack.ended);
+
+        serverQueue.connection.on("stateChange", (oldState, newState) => {
+            const oldNetworking = Reflect.get(oldState, 'networking');
+            const newNetworking = Reflect.get(newState, 'networking');
+
+            const networkStateChangeHandler = (oldNetworkState: any, newNetworkState: any) => {
+              const newUdp = Reflect.get(newNetworkState, 'udp');
+              clearInterval(newUdp?.keepAliveInterval);
+            }
+
+            oldNetworking?.off('stateChange', networkStateChangeHandler);
+            newNetworking?.on('stateChange', networkStateChangeHandler);
+        })
+
+        serverQueue.player.on("stateChange", (oldState, newState) => {
+            console.log("Status: " + newState.status);
             if (serverQueue.currentTrack.ended) {
                 if (!serverQueue.loop)
                     serverQueue.lastPlayed = serverQueue.songs.shift();
@@ -156,8 +170,8 @@ function playSong(guild: Guild, song: any) {
             .on("error", (error: any) => {
                 console.error(error);
                 let np = serverQueue.songs.shift();
-                let embed = new MessageEmbed()
-                    .setAuthor("No se puede reproducir:", config.avatarUrl)
+                let embed = new EmbedBuilder()
+                    .setAuthor( { name: "No se puede reproducir:", url: config.avatarUrl } )
                     .setTitle(np.title)
                     .setURL(np.url)
                     .setDescription(`Razon: ${error.message}`)
@@ -168,11 +182,10 @@ function playSong(guild: Guild, song: any) {
             });
     }
 
-    console.log("playing track here")
     serverQueue.player.play(serverQueue.currentTrack);
 }
 
-async function skip(discord_message: Message, _args: string[]): Promise<MessageOptions | string> {
+async function skip(discord_message: Message, _args: string[]): Promise<string> {
     const serverQueue = globalQueues.get(discord_message.guild.id);
     if (!serverQueue)
         return "Ni estoy tocando música";
@@ -185,7 +198,7 @@ async function skip(discord_message: Message, _args: string[]): Promise<MessageO
     serverQueue.loop = looping;
 }
 
-async function stop(discord_message: Message, _args: string[]): Promise<MessageOptions | string> {
+async function stop(discord_message: Message, _args: string[]): Promise<string> {
     const serverQueue = globalQueues.get(discord_message.guild.id);
     if (!serverQueue)
         return "Ni estoy tocando música";
@@ -195,6 +208,7 @@ async function stop(discord_message: Message, _args: string[]): Promise<MessageO
     serverQueue.player.stop();
 }
 
+// TODO: better returns here
 async function playtop(discord_message: Message, args: string[], status?: { ok: Boolean }) {
     const serverQueue = globalQueues.get(discord_message.guild.id);
     if (!status) status = { ok: false };
@@ -238,7 +252,7 @@ async function playskip(discord_message: Message, args: string[]) {
     return reply;
 }
 
-async function shuffle(discord_message: Message, _args: string[]): Promise<MessageOptions | string> {
+async function shuffle(discord_message: Message, _args: string[]): Promise<string> {
     let serverQueue = globalQueues.get(discord_message.guild.id);
     if (!serverQueue?.songs)
         return "No hay ni madres aquí";
@@ -290,10 +304,9 @@ async function queue(discord_message: Message, _args: string[]) {
     }
 
     let queue_idx = 0;
+    let sent = await (discord_message.channel as TextChannel).send(ytUitls.queueEmbed(serverQueue.songs, queue_idx));
 
-    let sent = await discord_message.channel.send(ytUitls.queueEmbed(serverQueue.songs, queue_idx));
-
-    const collector = discord_message.channel.createMessageComponentCollector({ time: 15000 });
+    const collector = (discord_message.channel as TextChannel).createMessageComponentCollector({ time: 15000 });
 
     collector.on('collect', async interaction => {
         if (interaction.message.id !== sent.id) return;

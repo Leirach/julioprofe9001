@@ -1,6 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.QueueContract = exports.Song = void 0;
+//TODO: Miove functionality from music.ts to this class
 class Song {
     constructor(title = "", url, duration, thumbnail, author) {
         this.title = title;

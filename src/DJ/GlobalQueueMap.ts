@@ -1,4 +1,3 @@
-import Collection from "@discordjs/collection";
 import { QueueContract } from "./musicClasses";
 import { VoiceStatusEventEmitter } from './voiceChannelEvents'
 
@@ -7,7 +6,7 @@ const DISCONNECT_TIMEOUT = 1000;
 export class GlobalQueueManager {
     private static instance: GlobalQueueManager;
 
-    private queueMap = new Collection<string, QueueContract>();
+    private queueMap = new Map<string, QueueContract>();
     private timeoutMap: {[key:string]: NodeJS.Timeout} = {};
     private voiceStatus = VoiceStatusEventEmitter.getInstance();
 

@@ -1,5 +1,7 @@
-import { Message, VoiceChannel, Collection, TextBasedChannels } from "discord.js";
+import { Message, VoiceChannel, TextChannel } from "discord.js";
 import { AudioPlayer, AudioResource, PlayerSubscription, VoiceConnection } from "@discordjs/voice";
+
+//TODO: Miove functionality from music.ts to this class
 
 export class Song {
     title: string;
@@ -19,7 +21,7 @@ export class Song {
 }
 
 export class QueueContract {
-    textChannel: TextBasedChannels;
+    textChannel: TextChannel;
     voiceChannel: VoiceChannel;
     connection: VoiceConnection | null;
     player: AudioPlayer;
@@ -31,7 +33,7 @@ export class QueueContract {
     subscription: PlayerSubscription;
 
     constructor(discord_message: Message, voiceChannel: VoiceChannel) {
-        this.textChannel = discord_message.channel;
+        this.textChannel = discord_message.channel as TextChannel;
         this.voiceChannel = voiceChannel;
         this.connection = null;
         this.player = null;
