@@ -1,0 +1,12 @@
+[Unit]
+Description=JulioProfe9001
+After=network.target
+
+[Service]
+User=juandl
+Restart=always
+WorkingDirectory=/home/juandl/julioprofe9001/
+ExecStart=/opt/nodejs/bin/node dist/index.js
+
+[Install]
+WantedBy=multi-user.target
