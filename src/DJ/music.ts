@@ -135,9 +135,21 @@ function playSong(guild: Guild, song: any) {
         globalQueues.delete(guild.id);
         return;
     }
+
+    var requestOptions = process.env.YT_COOKIE ? {
+        headers: {
+            cookie: process.env.YT_COOKIE
+        }
+    } : {};
+
     // Help, im only supposed to increase this param in ytdl and i dont even know why
     // { highWaterMark: 1024 * 1024 * 10 } // 10mb buffer, supposedly
-    const stream = ytdl(song.url, { filter: 'audioonly', highWaterMark: bufferSize });
+    const stream = ytdl(song.url, { 
+        filter: 'audioonly', 
+        highWaterMark: bufferSize, 
+        requestOptions: requestOptions
+    });
+
     serverQueue.currentTrack = createAudioResource(stream, { inlineVolume: true });
     let vol = ytUitls.getVolume(song.url);
     serverQueue.currentTrack.volume.setVolumeLogarithmic(vol / 5);
@@ -145,19 +157,6 @@ function playSong(guild: Guild, song: any) {
     if (!serverQueue.player) {
         serverQueue.player = createAudioPlayer();
         serverQueue.subscription = serverQueue.connection.subscribe(serverQueue.player);
-
-        serverQueue.connection.on("stateChange", (oldState, newState) => {
-            const oldNetworking = Reflect.get(oldState, 'networking');
-            const newNetworking = Reflect.get(newState, 'networking');
-
-            const networkStateChangeHandler = (oldNetworkState: any, newNetworkState: any) => {
-              const newUdp = Reflect.get(newNetworkState, 'udp');
-              clearInterval(newUdp?.keepAliveInterval);
-            }
-
-            oldNetworking?.off('stateChange', networkStateChangeHandler);
-            newNetworking?.on('stateChange', networkStateChangeHandler);
-        })
 
         serverQueue.player.on("stateChange", (oldState, newState) => {
             console.log("Status: " + newState.status);

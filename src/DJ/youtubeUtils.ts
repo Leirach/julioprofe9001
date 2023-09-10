@@ -115,6 +115,7 @@ export async function searchYT(keyword: string) {
         });
     } catch (err) {
         console.error(err);
+        throw err;
     }
 
     if (!res.data.items) {
@@ -130,6 +131,7 @@ export async function searchYT(keyword: string) {
         });
     } catch (err) {
         console.error(err);
+        throw err;
     }
 
     const firstResult = videoInfo.data.items[0];
