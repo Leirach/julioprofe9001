@@ -17,7 +17,7 @@ const prependURL = 'https://www.youtube.com/watch?v=';
 const volumesCSV = './memes/volumes.csv';
 const regexURL = /^.*((youtu.be\/)|(v\/)|(\/u\/\w\/)|(embed\/)|(watch\?))\??v?=?([^#&?]*).*/
 
-const QUEUE_PAGE_SIZE = 8;
+export const QUEUE_PAGE_SIZE = 8;
 
 let cachedPlaylist: Song[] = [];
 let volumesFile: number;
@@ -178,7 +178,7 @@ export function songEmbed(title: string, song: Song, streamTime: number): Messag
     return { embeds: [embed] };
 }
 
-export function queueEmbed(queue: Song[], start_idx: number): MessageCreateOptions {
+export function queueEmbedMessage(queue: Song[], start_idx: number): MessageCreateOptions {
     const end = start_idx + QUEUE_PAGE_SIZE;
     const cur_queue = queue.slice(start_idx, end);
 
@@ -190,7 +190,7 @@ export function queueEmbed(queue: Song[], start_idx: number): MessageCreateOptio
     let description = "";
     cur_queue.forEach(((song, idx) => {
         description += `**${start_idx + idx + 1}. [${song.title}](${song.url})**`;
-        description += `\n${song.author}`
+        description += `${song.author}`
         if (idx + 1 < QUEUE_PAGE_SIZE) {
             description += "\n\n";
         }
@@ -201,7 +201,7 @@ export function queueEmbed(queue: Song[], start_idx: number): MessageCreateOptio
         embeds: [embed],
         components: [
             // TODO: what the fuck is this yo
-            new ActionRowBuilder<any>()
+            new ActionRowBuilder<ButtonBuilder>()
                 .addComponents(
                     new ButtonBuilder()
                         .setCustomId(INTERACTION_PREV_ID)

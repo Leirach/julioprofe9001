@@ -1,4 +1,4 @@
-import { Message, Guild, EmbedBuilder, VoiceChannel, PermissionFlagsBits, TextChannel, MessageCreateOptions } from "discord.js";
+import { Message, Guild, EmbedBuilder, VoiceChannel, PermissionFlagsBits, TextChannel, MessageCreateOptions, MessagePayload, MessageTarget, InteractionUpdateOptions } from "discord.js";
 import { joinVoiceChannel, createAudioResource, createAudioPlayer } from '@discordjs/voice';
 import ytdl from 'ytdl-core';
 import { QueueContract, Song } from './musicClasses';
@@ -144,9 +144,9 @@ function playSong(guild: Guild, song: any) {
 
     // Help, im only supposed to increase this param in ytdl and i dont even know why
     // { highWaterMark: 1024 * 1024 * 10 } // 10mb buffer, supposedly
-    const stream = ytdl(song.url, { 
-        filter: 'audioonly', 
-        highWaterMark: bufferSize, 
+    const stream = ytdl(song.url, {
+        filter: 'audioonly',
+        highWaterMark: bufferSize,
         requestOptions: requestOptions
     });
 
@@ -170,7 +170,7 @@ function playSong(guild: Guild, song: any) {
                 console.error(error);
                 let np = serverQueue.songs.shift();
                 let embed = new EmbedBuilder()
-                    .setAuthor( { name: "No se puede reproducir:", url: config.avatarUrl } )
+                    .setAuthor({ name: "No se puede reproducir:", url: config.avatarUrl })
                     .setTitle(np.title)
                     .setURL(np.url)
                     .setDescription(`Razon: ${error.message}`)
@@ -303,7 +303,7 @@ async function queue(discord_message: Message, _args: string[]) {
     }
 
     let queue_idx = 0;
-    let sent = await (discord_message.channel as TextChannel).send(ytUitls.queueEmbed(serverQueue.songs, queue_idx));
+    let sent = await (discord_message.channel as TextChannel).send(ytUitls.queueEmbedMessage(serverQueue.songs, queue_idx));
 
     const collector = (discord_message.channel as TextChannel).createMessageComponentCollector({ time: 15000 });
 
@@ -311,12 +311,22 @@ async function queue(discord_message: Message, _args: string[]) {
         if (interaction.message.id !== sent.id) return;
         collector.resetTimer();
         if (interaction.customId == ytUitls.INTERACTION_PREV_ID) {
-            queue_idx -= 10;
+            queue_idx -= ytUitls.QUEUE_PAGE_SIZE;
         }
         if (interaction.customId == ytUitls.INTERACTION_NEXT_ID) {
-            queue_idx += 10;
+            queue_idx += ytUitls.QUEUE_PAGE_SIZE;
         }
-        await interaction.update(ytUitls.queueEmbed(serverQueue.songs, queue_idx));
+
+        const updatedMessage = ytUitls.queueEmbedMessage(serverQueue.songs, queue_idx);
+        await interaction.update({
+            embeds: updatedMessage.embeds,
+            components: updatedMessage.components,
+        });
+    });
+
+    collector.once("end", async collection => {
+        await sent.edit({ components: [] });
+        collector.stop();
     });
 }
 

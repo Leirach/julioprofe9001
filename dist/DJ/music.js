@@ -170,25 +170,24 @@ function playSong(guild, song) {
         globalQueues.delete(guild.id);
         return;
     }
+    var requestOptions = process.env.YT_COOKIE ? {
+        headers: {
+            cookie: process.env.YT_COOKIE
+        }
+    } : {};
     // Help, im only supposed to increase this param in ytdl and i dont even know why
     // { highWaterMark: 1024 * 1024 * 10 } // 10mb buffer, supposedly
-    const stream = (0, ytdl_core_1.default)(song.url, { filter: 'audioonly', highWaterMark: bufferSize });
+    const stream = (0, ytdl_core_1.default)(song.url, {
+        filter: 'audioonly',
+        highWaterMark: bufferSize,
+        requestOptions: requestOptions
+    });
     serverQueue.currentTrack = (0, voice_1.createAudioResource)(stream, { inlineVolume: true });
     let vol = ytUitls.getVolume(song.url);
     serverQueue.currentTrack.volume.setVolumeLogarithmic(vol / 5);
     if (!serverQueue.player) {
         serverQueue.player = (0, voice_1.createAudioPlayer)();
         serverQueue.subscription = serverQueue.connection.subscribe(serverQueue.player);
-        serverQueue.connection.on("stateChange", (oldState, newState) => {
-            const oldNetworking = Reflect.get(oldState, 'networking');
-            const newNetworking = Reflect.get(newState, 'networking');
-            const networkStateChangeHandler = (oldNetworkState, newNetworkState) => {
-                const newUdp = Reflect.get(newNetworkState, 'udp');
-                clearInterval(newUdp === null || newUdp === void 0 ? void 0 : newUdp.keepAliveInterval);
-            };
-            oldNetworking === null || oldNetworking === void 0 ? void 0 : oldNetworking.off('stateChange', networkStateChangeHandler);
-            newNetworking === null || newNetworking === void 0 ? void 0 : newNetworking.on('stateChange', networkStateChangeHandler);
-        });
         serverQueue.player.on("stateChange", (oldState, newState) => {
             console.log("Status: " + newState.status);
             if (serverQueue.currentTrack.ended) {
@@ -336,19 +335,27 @@ function queue(discord_message, _args) {
             return "No hay ni madres aqui";
         }
         let queue_idx = 0;
-        let sent = yield discord_message.channel.send(ytUitls.queueEmbed(serverQueue.songs, queue_idx));
+        let sent = yield discord_message.channel.send(ytUitls.queueEmbedMessage(serverQueue.songs, queue_idx));
         const collector = discord_message.channel.createMessageComponentCollector({ time: 15000 });
         collector.on('collect', (interaction) => __awaiter(this, void 0, void 0, function* () {
             if (interaction.message.id !== sent.id)
                 return;
             collector.resetTimer();
             if (interaction.customId == ytUitls.INTERACTION_PREV_ID) {
-                queue_idx -= 10;
+                queue_idx -= ytUitls.QUEUE_PAGE_SIZE;
             }
             if (interaction.customId == ytUitls.INTERACTION_NEXT_ID) {
-                queue_idx += 10;
+                queue_idx += ytUitls.QUEUE_PAGE_SIZE;
             }
-            yield interaction.update(ytUitls.queueEmbed(serverQueue.songs, queue_idx));
+            const updatedMessage = ytUitls.queueEmbedMessage(serverQueue.songs, queue_idx);
+            yield interaction.update({
+                embeds: updatedMessage.embeds,
+                components: updatedMessage.components,
+            });
+        }));
+        collector.once("end", (collection) => __awaiter(this, void 0, void 0, function* () {
+            yield sent.edit({ components: [] });
+            collector.stop();
         }));
     });
 }

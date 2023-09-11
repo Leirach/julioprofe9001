@@ -12,7 +12,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.setVolume = exports.getVolume = exports.readVolumes = exports.cachePlaylist = exports.queueEmbed = exports.songEmbed = exports.getSongs = exports.searchYT = exports.INTERACTION_NEXT_ID = exports.INTERACTION_PREV_ID = void 0;
+exports.setVolume = exports.getVolume = exports.readVolumes = exports.cachePlaylist = exports.queueEmbedMessage = exports.songEmbed = exports.getSongs = exports.searchYT = exports.QUEUE_PAGE_SIZE = exports.INTERACTION_NEXT_ID = exports.INTERACTION_PREV_ID = void 0;
 const googleapis_1 = require("googleapis");
 const musicClasses_1 = require("./musicClasses");
 const luxon_1 = require("luxon");
@@ -28,7 +28,7 @@ const apiKey = process.env.YT_API_KEY;
 const prependURL = 'https://www.youtube.com/watch?v=';
 const volumesCSV = './memes/volumes.csv';
 const regexURL = /^.*((youtu.be\/)|(v\/)|(\/u\/\w\/)|(embed\/)|(watch\?))\??v?=?([^#&?]*).*/;
-const QUEUE_PAGE_SIZE = 8;
+exports.QUEUE_PAGE_SIZE = 8;
 let cachedPlaylist = [];
 let volumesFile;
 let volumes = {};
@@ -117,6 +117,7 @@ function searchYT(keyword) {
         }
         catch (err) {
             console.error(err);
+            throw err;
         }
         if (!res.data.items) {
             return null;
@@ -132,6 +133,7 @@ function searchYT(keyword) {
         }
         catch (err) {
             console.error(err);
+            throw err;
         }
         const firstResult = videoInfo.data.items[0];
         return new musicClasses_1.Song(firstResult.snippet.title, prependURL + firstResult.id, firstResult.contentDetails.duration, firstResult.snippet.thumbnails.medium.url, firstResult.snippet.channelTitle);
@@ -175,8 +177,8 @@ function songEmbed(title, song, streamTime) {
     return { embeds: [embed] };
 }
 exports.songEmbed = songEmbed;
-function queueEmbed(queue, start_idx) {
-    const end = start_idx + QUEUE_PAGE_SIZE;
+function queueEmbedMessage(queue, start_idx) {
+    const end = start_idx + exports.QUEUE_PAGE_SIZE;
     const cur_queue = queue.slice(start_idx, end);
     let embed = new discord_js_1.EmbedBuilder()
         .setAuthor({ name: `Queue`, iconURL: config_1.config.avatarUrl })
@@ -185,8 +187,8 @@ function queueEmbed(queue, start_idx) {
     let description = "";
     cur_queue.forEach(((song, idx) => {
         description += `**${start_idx + idx + 1}. [${song.title}](${song.url})**`;
-        description += `\n${song.author}`;
-        if (idx + 1 < QUEUE_PAGE_SIZE) {
+        description += `${song.author}`;
+        if (idx + 1 < exports.QUEUE_PAGE_SIZE) {
             description += "\n\n";
         }
     }));
@@ -208,7 +210,7 @@ function queueEmbed(queue, start_idx) {
         ]
     };
 }
-exports.queueEmbed = queueEmbed;
+exports.queueEmbedMessage = queueEmbedMessage;
 function cachePlaylist(refresh = false) {
     return __awaiter(this, void 0, void 0, function* () {
         if (cachedPlaylist.length < 1 || refresh) {
