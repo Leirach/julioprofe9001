@@ -87,7 +87,12 @@ function oraculo(discord_message, _args) {
 function roll(discord_message, args) {
     return __awaiter(this, void 0, void 0, function* () {
         if (args[0]) {
-            return d20_1.default.roll(args[0]).toString();
+            try {
+                return d20_1.default.roll(args[0]).toString();
+            }
+            catch (e) {
+                return ":(";
+            }
         }
         else {
             return "Usage: !roll (dice)";

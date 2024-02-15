@@ -64,7 +64,12 @@ async function oraculo(discord_message: Message, _args: string[]) {
  */
 async function roll(discord_message: Message, args: string[]) {
     if (args[0]) {
-        return d20.roll(args[0]).toString();
+        try {
+            return d20.roll(args[0]).toString();
+        }
+        catch (e) {
+            return ":(";
+        }
     }
     else {
         return "Usage: !roll (dice)"
