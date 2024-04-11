@@ -1,4 +1,4 @@
-import { QueueContract } from "./musicClasses";
+import { QueueContract } from "./queueContract";
 import { VoiceStatusEventEmitter } from './voiceChannelEvents'
 
 const DISCONNECT_TIMEOUT = 1000;
@@ -52,6 +52,4 @@ export class GlobalQueueManager {
     delete(key: string) {
         return this.queueMap.delete(key);
     }
-
-
 }

@@ -39,15 +39,17 @@ exports.musicCommands = void 0;
 const discord_js_1 = require("discord.js");
 const voice_1 = require("@discordjs/voice");
 const ytdl_core_1 = __importDefault(require("ytdl-core"));
-const musicClasses_1 = require("./musicClasses");
-const ytUitls = __importStar(require("./youtubeUtils"));
+const queueContract_1 = require("./queueContract");
+const musicUtils = __importStar(require("./musicUtils"));
+const youtubeClient = __importStar(require("./youtubeClient"));
 const utilities_1 = require("../utilities");
 const config_1 = require("../config");
-const GlobalQueueMap_1 = require("./GlobalQueueMap");
+const globalQueueManager_1 = require("./globalQueueManager");
 const botClass_1 = require("../botClass");
+const song_1 = require("./song");
 //TODO: separate file into different commands/utils or something else
 const bufferSize = 1 << 25;
-let globalQueues = GlobalQueueMap_1.GlobalQueueManager.getInstance();
+let globalQueues = globalQueueManager_1.GlobalQueueManager.getInstance();
 exports.musicCommands = {
     "play": play,
     "queue": queue,
@@ -69,13 +71,14 @@ exports.musicCommands = {
 };
 function preloadPlaylist(discord_message, args) {
     return __awaiter(this, void 0, void 0, function* () {
+        var dumbQueue = new queueContract_1.QueueContract(discord_message, null);
         try {
-            yield ytUitls.cachePlaylist(true);
+            yield youtubeClient.getCachePlaylist(dumbQueue, true);
         }
         catch (err) {
             return `Lmao la cagué: ${err}`;
         }
-        return "Big pp, done.";
+        return "Cargando playlist";
     });
 }
 function playlist(discord_message, args) {
@@ -96,63 +99,55 @@ function play(discord_message, args, preshuffle) {
         if (!permissions.has(discord_js_1.PermissionFlagsBits.Connect) || !permissions.has(discord_js_1.PermissionFlagsBits.Speak)) {
             return "Necesito permisos para conectar en ese canal";
         }
+        let serverQueue = globalQueues.get(discord_message.guild.id);
+        if (!serverQueue) {
+            serverQueue = new queueContract_1.QueueContract(discord_message, voiceChannel);
+        }
         // tries to parse url
-        let result;
         let sendEmbed;
+        let isPlaylist;
         if ((0, utilities_1.isURL)(args[0])) {
-            result = yield ytUitls.getSongs(args[0]);
+            isPlaylist = yield youtubeClient.getSongs(serverQueue, args[0]);
             sendEmbed = false;
         }
         else {
             if (!args.join(' ')) {
                 return "Tocame esta XD";
             }
-            result = yield ytUitls.searchYT(args.join(' '));
+            serverQueue.songs.push(yield youtubeClient.searchYT(args.join(' ')));
+            isPlaylist = false;
             sendEmbed = true;
         }
-        //if a queueContract already exists (bot is already playing a song)
+        if (isPlaylist && preshuffle) {
+            (0, utilities_1.shuffleArray)(serverQueue.songs);
+        }
+        // if player already exists
         // push a song in the array and return confirmation message
-        let serverQueue = globalQueues.get(discord_message.guild.id);
-        if (serverQueue) {
-            // if its a song push it, otherwise concat the whole fucking array
-            if (result instanceof musicClasses_1.Song) {
-                serverQueue.songs.push(result);
-                return sendEmbed ? ytUitls.songEmbed("Agregado", result, 0) : "Yastas";
+        if (serverQueue.player != null) {
+            if (!isPlaylist) {
+                return sendEmbed ? musicUtils.songEmbed("Agregado", serverQueue.songs[0], 0) : "Yastas";
             }
             else {
-                // TODO: preshuffle and handle arrays better
-                if (preshuffle)
-                    result = (0, utilities_1.shuffleArray)(result);
-                serverQueue.songs = serverQueue.songs.concat(result);
                 return `Agregadas un chingo de canciones`;
             }
         }
-        // Otherwise create new contract and start playing music boi
-        serverQueue = new musicClasses_1.QueueContract(discord_message, voiceChannel);
+        // TODO: MOVE TO ANOTHER METHOD
+        // Save new queue, in case anything failed above
         globalQueues.set(discord_message.guild.id, serverQueue);
-        if (result instanceof musicClasses_1.Song) {
-            serverQueue.songs.push(result);
-        }
-        else {
-            // TODO: preshuffle and handle arrays better (same as above)
-            if (preshuffle)
-                result = (0, utilities_1.shuffleArray)(result);
-            serverQueue.songs = serverQueue.songs.concat(result);
-        }
         try {
             const song = serverQueue.songs[0];
-            if (sendEmbed) {
-                serverQueue.textChannel.send(ytUitls.songEmbed("Now Playing", song, 0));
-            }
-            else {
-                serverQueue.textChannel.send(`Now playing: ${song.title}`);
-            }
             serverQueue.connection = (0, voice_1.joinVoiceChannel)({
                 channelId: voiceChannel.id,
                 guildId: voiceChannel.guildId,
                 adapterCreator: voiceChannel.guild.voiceAdapterCreator
             });
             playSong(discord_message.guild, serverQueue.songs[0]);
+            if (sendEmbed) {
+                serverQueue.textChannel.send(musicUtils.songEmbed("Now Playing", song, 0));
+            }
+            else {
+                serverQueue.textChannel.send(`Now playing: ${song.title}`);
+            }
         }
         catch (err) {
             console.log(err);
@@ -183,7 +178,7 @@ function playSong(guild, song) {
         requestOptions: requestOptions
     });
     serverQueue.currentTrack = (0, voice_1.createAudioResource)(stream, { inlineVolume: true });
-    let vol = ytUitls.getVolume(song.url);
+    let vol = musicUtils.getVolume(song.url);
     serverQueue.currentTrack.volume.setVolumeLogarithmic(vol / 5);
     if (!serverQueue.player) {
         serverQueue.player = (0, voice_1.createAudioPlayer)();
@@ -249,7 +244,7 @@ function playtop(discord_message, args, status) {
         let result;
         let msg;
         if ((0, utilities_1.isURL)(args[0])) {
-            result = yield ytUitls.getSongs(args[0]);
+            result = yield youtubeClient.getSongs(serverQueue, args[0]);
             msg = "Yastas";
             status.ok = true;
         }
@@ -258,11 +253,11 @@ function playtop(discord_message, args, status) {
                 status.ok = false;
                 return "Tocame esta XD";
             }
-            result = yield ytUitls.searchYT(args.join(' '));
-            msg = ytUitls.songEmbed("Sigue", result, 0);
+            result = yield youtubeClient.searchYT(args.join(' '));
+            msg = musicUtils.songEmbed("Sigue", result, 0);
             status.ok = true;
         }
-        if (!(result instanceof musicClasses_1.Song)) {
+        if (!(result instanceof song_1.Song)) {
             status.ok = false;
             return "Nel, no puedo agregar playlists";
         }
@@ -301,7 +296,7 @@ function volume(discord_message, args) {
         if (!(serverQueue === null || serverQueue === void 0 ? void 0 : serverQueue.songs))
             return "No hay ni madres aquí";
         if (!args[0]) {
-            return `Volume: ${ytUitls.getVolume(serverQueue.songs[0].url)}`;
+            return `Volume: ${musicUtils.getVolume(serverQueue.songs[0].url)}`;
         }
         let volume = parseInt(args[0]);
         if (isNaN(volume))
@@ -311,7 +306,7 @@ function volume(discord_message, args) {
         if (volume > 10) {
             return "No creo que eso sea una buena idea";
         }
-        ytUitls.setVolume(serverQueue.songs[0].url, volume);
+        musicUtils.setVolume(serverQueue.songs[0].url, volume);
         serverQueue.currentTrack.volume.setVolumeLogarithmic(volume / 5);
     });
 }
@@ -324,7 +319,7 @@ function nowPlaying(discord_message, _args) {
         const np = serverQueue.songs[0];
         // get time and format it accordingly
         let time = serverQueue.currentTrack.playbackDuration;
-        return ytUitls.songEmbed("Now playing", np, time);
+        return musicUtils.songEmbed("Now playing", np, time);
     });
 }
 function queue(discord_message, _args) {
@@ -335,19 +330,19 @@ function queue(discord_message, _args) {
             return "No hay ni madres aqui";
         }
         let queue_idx = 0;
-        let sent = yield discord_message.channel.send(ytUitls.queueEmbedMessage(serverQueue.songs, queue_idx));
+        let sent = yield discord_message.channel.send(musicUtils.queueEmbedMessage(serverQueue.songs, queue_idx));
         const collector = discord_message.channel.createMessageComponentCollector({ time: 15000 });
         collector.on('collect', (interaction) => __awaiter(this, void 0, void 0, function* () {
             if (interaction.message.id !== sent.id)
                 return;
             collector.resetTimer();
-            if (interaction.customId == ytUitls.INTERACTION_PREV_ID) {
-                queue_idx -= ytUitls.QUEUE_PAGE_SIZE;
+            if (interaction.customId == musicUtils.INTERACTION_PREV_ID) {
+                queue_idx -= musicUtils.QUEUE_PAGE_SIZE;
             }
-            if (interaction.customId == ytUitls.INTERACTION_NEXT_ID) {
-                queue_idx += ytUitls.QUEUE_PAGE_SIZE;
+            if (interaction.customId == musicUtils.INTERACTION_NEXT_ID) {
+                queue_idx += musicUtils.QUEUE_PAGE_SIZE;
             }
-            const updatedMessage = ytUitls.queueEmbedMessage(serverQueue.songs, queue_idx);
+            const updatedMessage = musicUtils.queueEmbedMessage(serverQueue.songs, queue_idx);
             yield interaction.update({
                 embeds: updatedMessage.embeds,
                 components: updatedMessage.components,
@@ -380,6 +375,6 @@ function lastPlayed(discord_message, args) {
             return "No hay ni madres aquí";
         // send last played embed
         const lp = serverQueue.lastPlayed;
-        return ytUitls.songEmbed("Last played", lp, 0);
+        return musicUtils.songEmbed("Last played", lp, 0);
     });
 }

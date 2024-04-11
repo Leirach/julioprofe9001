@@ -1,12 +1,14 @@
-import { Message, Guild, EmbedBuilder, VoiceChannel, PermissionFlagsBits, TextChannel, MessageCreateOptions, MessagePayload, MessageTarget, InteractionUpdateOptions } from "discord.js";
+import { Message, Guild, EmbedBuilder, VoiceChannel, PermissionFlagsBits, TextChannel, MessageCreateOptions } from "discord.js";
 import { joinVoiceChannel, createAudioResource, createAudioPlayer } from '@discordjs/voice';
 import ytdl from 'ytdl-core';
-import { QueueContract, Song } from './musicClasses';
-import * as ytUitls from './youtubeUtils';
+import { QueueContract } from './queueContract';
+import * as musicUtils from './musicUtils';
+import * as youtubeClient from './youtubeClient';
 import { isURL, shuffleArray } from "../utilities";
 import { config } from '../config'
-import { GlobalQueueManager } from "./GlobalQueueMap";
+import { GlobalQueueManager } from "./globalQueueManager";
 import { Bot } from "../botClass";
+import { Song } from "./song";
 
 //TODO: separate file into different commands/utils or something else
 
@@ -36,12 +38,13 @@ export let musicCommands: FunctionDictionary = {
 }
 
 async function preloadPlaylist(discord_message: Message, args: string[]) {
+    var dumbQueue = new QueueContract(discord_message, null)
     try {
-        await ytUitls.cachePlaylist(true);
+        await youtubeClient.getCachePlaylist(dumbQueue, true);
     } catch (err) {
         return `Lmao la cagué: ${err}`;
     }
-    return "Big pp, done."
+    return "Cargando playlist"
 }
 
 async function playlist(discord_message: Message, args: string[]) {
@@ -61,71 +64,66 @@ async function play(discord_message: Message, args: string[], preshuffle?: boole
         return "Necesito permisos para conectar en ese canal";
     }
 
-    // tries to parse url
-    let result;
+    let serverQueue = globalQueues.get(discord_message.guild.id);
+    if (!serverQueue) {
+        serverQueue = new QueueContract(discord_message, voiceChannel as VoiceChannel);
+    }
+
     let sendEmbed: boolean;
+    let isPlaylist: boolean;
     if (isURL(args[0])) {
-        result = await ytUitls.getSongs(args[0]);
+        isPlaylist = await youtubeClient.getSongs(serverQueue, args[0]);
         sendEmbed = false;
     }
     else {
         if (!args.join(' ')) {
             return "Tocame esta XD";
         }
-        result = await ytUitls.searchYT(args.join(' '));
+        serverQueue.songs.push(await youtubeClient.searchYT(args.join(' ')));
+        isPlaylist = false;
         sendEmbed = true;
     }
 
-    //if a queueContract already exists (bot is already playing a song)
+    if (isPlaylist && preshuffle) {
+        shuffleArray(serverQueue.songs);
+    }
+
+    // if player already exists
     // push a song in the array and return confirmation message
-    let serverQueue = globalQueues.get(discord_message.guild.id);
-    if (serverQueue) {
-        // if its a song push it, otherwise concat the whole fucking array
-        if (result instanceof Song) {
-            serverQueue.songs.push(result);
-            return sendEmbed ? ytUitls.songEmbed("Agregado", result, 0) : "Yastas";
+    if (serverQueue.player != null) {
+        if (!isPlaylist) {
+            return sendEmbed ? musicUtils.songEmbed("Agregado", serverQueue.songs[0], 0) : "Yastas";
         }
         else {
-            // TODO: preshuffle and handle arrays better
-            if (preshuffle) result = shuffleArray(result);
-            serverQueue.songs = serverQueue.songs.concat(result);
             return `Agregadas un chingo de canciones`;
         }
     }
 
-    // Otherwise create new contract and start playing music boi
-    serverQueue = new QueueContract(discord_message, voiceChannel as VoiceChannel);
+    // TODO: MOVE TO ANOTHER METHOD
+    // Save new queue, in case anything failed above
     globalQueues.set(discord_message.guild.id, serverQueue);
-
-    if (result instanceof Song) {
-        serverQueue.songs.push(result);
-    }
-    else {
-        // TODO: preshuffle and handle arrays better (same as above)
-        if (preshuffle) result = shuffleArray(result);
-        serverQueue.songs = serverQueue.songs.concat(result);
-    }
 
     try {
         const song = serverQueue.songs[0];
-        if (sendEmbed) {
-            serverQueue.textChannel.send(ytUitls.songEmbed("Now Playing", song, 0));
-        }
-        else {
-            serverQueue.textChannel.send(`Now playing: ${song.title}`);
-        }
         serverQueue.connection = joinVoiceChannel({
             channelId: voiceChannel.id,
             guildId: voiceChannel.guildId,
             adapterCreator: voiceChannel.guild.voiceAdapterCreator
         });
         playSong(discord_message.guild, serverQueue.songs[0]);
+        if (sendEmbed) {
+            serverQueue.textChannel.send(musicUtils.songEmbed("Now Playing", song, 0));
+        }
+        else {
+            serverQueue.textChannel.send(`Now playing: ${song.title}`);
+        }
     } catch (err) {
         console.log(err);
         globalQueues.delete(discord_message.guild.id);
         return "Lmao no me pude conectar"
     }
 }
+
 // TODO: better logs here
 function playSong(guild: Guild, song: any) {
     const serverQueue = globalQueues.get(guild.id);
@@ -151,7 +149,7 @@ function playSong(guild: Guild, song: any) {
     });
 
     serverQueue.currentTrack = createAudioResource(stream, { inlineVolume: true });
-    let vol = ytUitls.getVolume(song.url);
+    let vol = musicUtils.getVolume(song.url);
     serverQueue.currentTrack.volume.setVolumeLogarithmic(vol / 5);
 
     if (!serverQueue.player) {
@@ -218,7 +216,7 @@ async function playtop(discord_message: Message, args: string[], status?: { ok: 
     let result;
     let msg;
     if (isURL(args[0])) {
-        result = await ytUitls.getSongs(args[0]);
+        result = await youtubeClient.getSongs(serverQueue, args[0]);
         msg = "Yastas";
         status.ok = true;
     }
@@ -227,8 +225,8 @@ async function playtop(discord_message: Message, args: string[], status?: { ok: 
             status.ok = false;
             return "Tocame esta XD";
         }
-        result = await ytUitls.searchYT(args.join(' '));
-        msg = ytUitls.songEmbed("Sigue", result, 0);
+        result = await youtubeClient.searchYT(args.join(' '));
+        msg = musicUtils.songEmbed("Sigue", result, 0);
         status.ok = true;
     }
     if (!(result instanceof Song)) {
@@ -268,7 +266,7 @@ async function volume(discord_message: Message, args: string[]) {
         return "No hay ni madres aquí";
 
     if (!args[0]) {
-        return `Volume: ${ytUitls.getVolume(serverQueue.songs[0].url)}`
+        return `Volume: ${musicUtils.getVolume(serverQueue.songs[0].url)}`
     }
 
     let volume = parseInt(args[0]);
@@ -280,7 +278,7 @@ async function volume(discord_message: Message, args: string[]) {
         return "No creo que eso sea una buena idea";
     }
 
-    ytUitls.setVolume(serverQueue.songs[0].url, volume);
+    musicUtils.setVolume(serverQueue.songs[0].url, volume);
     serverQueue.currentTrack.volume.setVolumeLogarithmic(volume / 5);
 }
 
@@ -293,7 +291,7 @@ async function nowPlaying(discord_message: Message, _args: string[]) {
     const np = serverQueue.songs[0];
     // get time and format it accordingly
     let time = serverQueue.currentTrack.playbackDuration;
-    return ytUitls.songEmbed("Now playing", np, time);
+    return musicUtils.songEmbed("Now playing", np, time);
 }
 
 async function queue(discord_message: Message, _args: string[]) {
@@ -303,21 +301,21 @@ async function queue(discord_message: Message, _args: string[]) {
     }
 
     let queue_idx = 0;
-    let sent = await (discord_message.channel as TextChannel).send(ytUitls.queueEmbedMessage(serverQueue.songs, queue_idx));
+    let sent = await (discord_message.channel as TextChannel).send(musicUtils.queueEmbedMessage(serverQueue.songs, queue_idx));
 
     const collector = (discord_message.channel as TextChannel).createMessageComponentCollector({ time: 15000 });
 
     collector.on('collect', async interaction => {
         if (interaction.message.id !== sent.id) return;
         collector.resetTimer();
-        if (interaction.customId == ytUitls.INTERACTION_PREV_ID) {
-            queue_idx -= ytUitls.QUEUE_PAGE_SIZE;
+        if (interaction.customId == musicUtils.INTERACTION_PREV_ID) {
+            queue_idx -= musicUtils.QUEUE_PAGE_SIZE;
         }
-        if (interaction.customId == ytUitls.INTERACTION_NEXT_ID) {
-            queue_idx += ytUitls.QUEUE_PAGE_SIZE;
+        if (interaction.customId == musicUtils.INTERACTION_NEXT_ID) {
+            queue_idx += musicUtils.QUEUE_PAGE_SIZE;
         }
 
-        const updatedMessage = ytUitls.queueEmbedMessage(serverQueue.songs, queue_idx);
+        const updatedMessage = musicUtils.queueEmbedMessage(serverQueue.songs, queue_idx);
         await interaction.update({
             embeds: updatedMessage.embeds,
             components: updatedMessage.components,
@@ -350,5 +348,5 @@ async function lastPlayed(discord_message: Message, args: string[]) {
 
     // send last played embed
     const lp = serverQueue.lastPlayed;
-    return ytUitls.songEmbed("Last played", lp, 0);
+    return musicUtils.songEmbed("Last played", lp, 0);
 }

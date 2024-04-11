@@ -18,7 +18,7 @@ function replyTo(this: Bot, discord_message: Message) {
 
     if (discord_message.content.startsWith(config.musicPrefix)) {
         var words = message.split(" ");
-        const command = words[0].substring(1);
+        const command = words[0].substring(1).toLowerCase();
         djJulio(command, words.slice(1), discord_message);
         return;
     }

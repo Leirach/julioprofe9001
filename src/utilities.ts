@@ -1,22 +1,3 @@
-import fs from 'fs';
-import path from 'path'
-
-/**
- * Loads copypastas from the files declared in config.json cp_files array, and
- * concats them in a single array.
- * Copypastas must be separated by a single newline within the same file.
- */
-function loadCopypastas(cp_files: string[]) {
-    var copypasta: any = [];
-    cp_files.forEach((file: string) => {
-        let cp_path = path.join(__dirname, '..', 'memes', file);
-        let temp = fs.readFileSync(cp_path).toString().split("\n");
-        copypasta = copypasta.concat(temp);
-    });
-
-    return copypasta;
-}
-
 /**
  * Returns a random element from given array.
  * @param {array} arr
@@ -79,4 +60,4 @@ function shuffleArray(array: any[]) {
     return array;
 }
 
-export { loadCopypastas, getRandom, randBool, sleep, isURL, shuffleArray }
+export { getRandom, randBool, sleep, isURL, shuffleArray }

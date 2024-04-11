@@ -1,26 +1,6 @@
 "use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.shuffleArray = exports.isURL = exports.sleep = exports.randBool = exports.getRandom = exports.loadCopypastas = void 0;
-const fs_1 = __importDefault(require("fs"));
-const path_1 = __importDefault(require("path"));
-/**
- * Loads copypastas from the files declared in config.json cp_files array, and
- * concats them in a single array.
- * Copypastas must be separated by a single newline within the same file.
- */
-function loadCopypastas(cp_files) {
-    var copypasta = [];
-    cp_files.forEach((file) => {
-        let cp_path = path_1.default.join(__dirname, '..', 'memes', file);
-        let temp = fs_1.default.readFileSync(cp_path).toString().split("\n");
-        copypasta = copypasta.concat(temp);
-    });
-    return copypasta;
-}
-exports.loadCopypastas = loadCopypastas;
+exports.shuffleArray = exports.isURL = exports.sleep = exports.randBool = exports.getRandom = void 0;
 /**
  * Returns a random element from given array.
  * @param {array} arr

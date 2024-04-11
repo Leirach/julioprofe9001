@@ -1,24 +1,8 @@
 import { Message, VoiceChannel, TextChannel } from "discord.js";
 import { AudioPlayer, AudioResource, PlayerSubscription, VoiceConnection } from "@discordjs/voice";
+import { Song } from "./song";
 
 //TODO: Miove functionality from music.ts to this class
-
-export class Song {
-    title: string;
-    url: string;
-    duration: string;
-    thumbnail: string;
-    volume: number;
-    author: string;
-
-    constructor(title: string = "", url: string, duration: string, thumbnail: string, author: string) {
-        this.title = title;
-        this.url = url;
-        this.duration = duration;
-        this.thumbnail = thumbnail;
-        this.author = author;
-    }
-}
 
 export class QueueContract {
     textChannel: TextChannel;
