@@ -2,6 +2,8 @@ import { google } from 'googleapis';
 import { Song } from './song';
 import { QueueContract } from './queueContract';
 import { config } from '../config';
+import { cloneDeep } from 'lodash';
+import { QueueEventEmitter } from './queueEventEmitter';
 
 // TODO: separate utils by type
 
@@ -14,6 +16,7 @@ const prependURL = 'https://www.youtube.com/watch?v=';
 const regexURL = /^.*((youtu.be\/)|(v\/)|(\/u\/\w\/)|(embed\/)|(watch\?))\??v?=?([^#&?]*).*/
 
 let cachedPlaylist: Song[] = [];
+const queueEventEmitter = QueueEventEmitter.getInstance();
 
 export async function getSongs(queue: QueueContract, url: string) {
     if (url.includes('/playlist?list=')) {
@@ -31,11 +34,14 @@ export async function getSongs(queue: QueueContract, url: string) {
     return false;
 }
 
-export async function getCachePlaylist(queue: QueueContract, refresh = false) {
+export async function getCachePlaylist(queue: QueueContract, refresh = false) : Promise<void> {
     if (cachedPlaylist.length == 0 || refresh) {
         await getPlaylistAsync(queue, config.playlistId, null);
     }
-    return cachedPlaylist;
+    else {
+        queue.songs = cloneDeep(cachedPlaylist);
+        queueEventEmitter.emitPlaylistLoaded(queue.id);
+    }
 }
 
 export async function searchYT(keyword: string) {
@@ -74,9 +80,12 @@ export async function searchYT(keyword: string) {
 }
 
 async function getPlaylistAsync(queue: QueueContract, playlistId: string, nextPageToken: string): Promise<void> {
-    console.log("Fetching playlist...");
     var [songs, nextPageToken] = await getPlaylistItems(playlistId, nextPageToken);
+
     queue.songs.push(...songs);
+    if (playlistId == config.playlistId){
+        cachedPlaylist.push(...songs);
+    }
 
     if (nextPageToken) {
         getPlaylistAsync(queue, playlistId, nextPageToken).catch(err => {
@@ -84,11 +93,7 @@ async function getPlaylistAsync(queue: QueueContract, playlistId: string, nextPa
         });
     }
     else {
-        console.log("Finished saving playlist");
-        if (playlistId == config.playlistId) {
-            console.log("Saving prefered playlist");
-            cachedPlaylist = queue.songs;
-        }
+        queueEventEmitter.emitPlaylistLoaded(queue.id);
     }
 }
 

@@ -24,6 +24,7 @@
     "fluent-ffmpeg": "^2.1.2",
     "googleapis": "^61.0.0",
     "libsodium-wrappers": "^0.7.9",
+    "lodash": "^4.17.21",
     "luxon": "^2.0.2",
     "opusscript": "^0.0.8",
     "ytdl-core": "^4.11.5"
@@ -31,6 +32,7 @@
   "devDependencies": {
     "@types/d20": "^1.4.0",
     "@types/express": "^4.17.12",
+    "@types/lodash": "^4.17.0",
     "@types/luxon": "^2.0.3",
     "@types/node": "^16.9.1",
     "@types/ws": "^7.4.4",

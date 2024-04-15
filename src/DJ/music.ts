@@ -85,7 +85,7 @@ async function play(discord_message: Message, args: string[], preshuffle?: boole
     }
 
     if (isPlaylist && preshuffle) {
-        shuffleArray(serverQueue.songs);
+        serverQueue.shufflePlaylist();
     }
 
     // if player already exists

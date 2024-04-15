@@ -13,6 +13,8 @@ exports.searchYT = exports.getCachePlaylist = exports.getSongs = exports.INTERAC
 const googleapis_1 = require("googleapis");
 const song_1 = require("./song");
 const config_1 = require("../config");
+const lodash_1 = require("lodash");
+const queueEventEmitter_1 = require("./queueEventEmitter");
 // TODO: separate utils by type
 exports.INTERACTION_PREV_ID = 'queue_prev';
 exports.INTERACTION_NEXT_ID = 'queue_next';
@@ -21,6 +23,7 @@ const apiKey = process.env.YT_API_KEY;
 const prependURL = 'https://www.youtube.com/watch?v=';
 const regexURL = /^.*((youtu.be\/)|(v\/)|(\/u\/\w\/)|(embed\/)|(watch\?))\??v?=?([^#&?]*).*/;
 let cachedPlaylist = [];
+const queueEventEmitter = queueEventEmitter_1.QueueEventEmitter.getInstance();
 function getSongs(queue, url) {
     return __awaiter(this, void 0, void 0, function* () {
         if (url.includes('/playlist?list=')) {
@@ -44,7 +47,10 @@ function getCachePlaylist(queue, refresh = false) {
         if (cachedPlaylist.length == 0 || refresh) {
             yield getPlaylistAsync(queue, config_1.config.playlistId, null);
         }
-        return cachedPlaylist;
+        else {
+            queue.songs = (0, lodash_1.cloneDeep)(cachedPlaylist);
+            queueEventEmitter.emitPlaylistLoaded(queue.id);
+        }
     });
 }
 exports.getCachePlaylist = getCachePlaylist;
@@ -81,20 +87,18 @@ exports.searchYT = searchYT;
 function getPlaylistAsync(queue, playlistId, nextPageToken) {
     var songs, nextPageToken;
     return __awaiter(this, void 0, void 0, function* () {
-        console.log("Fetching playlist...");
         [songs, nextPageToken] = yield getPlaylistItems(playlistId, nextPageToken);
         queue.songs.push(...songs);
+        if (playlistId == config_1.config.playlistId) {
+            cachedPlaylist.push(...songs);
+        }
         if (nextPageToken) {
             getPlaylistAsync(queue, playlistId, nextPageToken).catch(err => {
                 console.error(`Failed to load playlist page. pageToken: ${nextPageToken}, error: ${err}`);
             });
         }
         else {
-            console.log("Finished saving playlist");
-            if (playlistId == config_1.config.playlistId) {
-                console.log("Saving prefered playlist");
-                cachedPlaylist = queue.songs;
-            }
+            queueEventEmitter.emitPlaylistLoaded(queue.id);
         }
     });
 }

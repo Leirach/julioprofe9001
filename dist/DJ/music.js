@@ -103,7 +103,6 @@ function play(discord_message, args, preshuffle) {
         if (!serverQueue) {
             serverQueue = new queueContract_1.QueueContract(discord_message, voiceChannel);
         }
-        // tries to parse url
         let sendEmbed;
         let isPlaylist;
         if ((0, utilities_1.isURL)(args[0])) {
@@ -119,7 +118,7 @@ function play(discord_message, args, preshuffle) {
             sendEmbed = true;
         }
         if (isPlaylist && preshuffle) {
-            (0, utilities_1.shuffleArray)(serverQueue.songs);
+            serverQueue.shufflePlaylist();
         }
         // if player already exists
         // push a song in the array and return confirmation message

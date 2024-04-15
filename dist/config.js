@@ -1,4 +1,5 @@
 "use strict";
+// TODO: load everything from env, load with validations
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.config = void 0;
 exports.config = {
