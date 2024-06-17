@@ -46,7 +46,6 @@ const utilities_1 = require("../utilities");
 const config_1 = require("../config");
 const globalQueueManager_1 = require("./globalQueueManager");
 const botClass_1 = require("../botClass");
-const song_1 = require("./song");
 //TODO: separate file into different commands/utils or something else
 const bufferSize = 1 << 25;
 let globalQueues = globalQueueManager_1.GlobalQueueManager.getInstance();
@@ -106,7 +105,7 @@ function play(discord_message, args, preshuffle) {
         let sendEmbed;
         let isPlaylist;
         if ((0, utilities_1.isURL)(args[0])) {
-            isPlaylist = yield youtubeClient.getSongs(serverQueue, args[0]);
+            isPlaylist = yield youtubeClient.addSongsToQueueAsync(serverQueue, args[0]);
             sendEmbed = false;
         }
         else {
@@ -127,7 +126,7 @@ function play(discord_message, args, preshuffle) {
                 return sendEmbed ? musicUtils.songEmbed("Agregado", serverQueue.songs[0], 0) : "Yastas";
             }
             else {
-                return `Agregadas un chingo de canciones`;
+                return "Agregadas un chingo de canciones";
             }
         }
         // TODO: MOVE TO ANOTHER METHOD
@@ -183,7 +182,6 @@ function playSong(guild, song) {
         serverQueue.player = (0, voice_1.createAudioPlayer)();
         serverQueue.subscription = serverQueue.connection.subscribe(serverQueue.player);
         serverQueue.player.on("stateChange", (oldState, newState) => {
-            console.log("Status: " + newState.status);
             if (serverQueue.currentTrack.ended) {
                 if (!serverQueue.loop)
                     serverQueue.lastPlayed = serverQueue.songs.shift();
@@ -230,51 +228,37 @@ function stop(discord_message, _args) {
         serverQueue.player.stop();
     });
 }
-// TODO: better returns here
-function playtop(discord_message, args, status) {
+function playtop(discord_message, args, skipCurrent = false) {
     return __awaiter(this, void 0, void 0, function* () {
         const serverQueue = globalQueues.get(discord_message.guild.id);
-        if (!status)
-            status = { ok: false };
         if (!serverQueue) {
-            status.ok = false;
             return play(discord_message, args);
         }
-        let result;
-        let msg;
+        if (args.length == 0) {
+            return "Tocame esta XD";
+        }
         if ((0, utilities_1.isURL)(args[0])) {
-            result = yield youtubeClient.getSongs(serverQueue, args[0]);
-            msg = "Yastas";
-            status.ok = true;
+            let songs = yield youtubeClient.getSongsFromUrl(args[0]);
+            if (songs.length == 0) {
+                return "No lo pudo agregar lmao";
+            }
+            serverQueue.songs.splice(1, 0, ...songs);
+            if (skipCurrent)
+                serverQueue.player.stop();
+            return "Yastas";
         }
         else {
-            if (!args.join(' ')) {
-                status.ok = false;
-                return "Tocame esta XD";
-            }
-            result = yield youtubeClient.searchYT(args.join(' '));
-            msg = musicUtils.songEmbed("Sigue", result, 0);
-            status.ok = true;
+            let song = yield youtubeClient.searchYT(args.join(' '));
+            serverQueue.songs.splice(1, 0, song);
+            if (skipCurrent)
+                serverQueue.player.stop();
+            return musicUtils.songEmbed("Sigue", song, 0);
         }
-        if (!(result instanceof song_1.Song)) {
-            status.ok = false;
-            return "Nel, no puedo agregar playlists";
-        }
-        serverQueue.songs.splice(1, 0, result);
-        status.ok = true;
-        return msg;
     });
 }
-//TODO: bug playskip without arguments and without queue
 function playskip(discord_message, args) {
     return __awaiter(this, void 0, void 0, function* () {
-        const serverQueue = globalQueues.get(discord_message.guild.id);
-        let status = { ok: false };
-        let reply = yield playtop(discord_message, args, status);
-        if (status.ok) {
-            serverQueue.player.stop();
-        }
-        return reply;
+        return playtop(discord_message, args, true);
     });
 }
 function shuffle(discord_message, _args) {

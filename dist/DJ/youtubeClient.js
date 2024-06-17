@@ -9,7 +9,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.searchYT = exports.getCachePlaylist = exports.getSongs = exports.INTERACTION_NEXT_ID = exports.INTERACTION_PREV_ID = void 0;
+exports.searchYT = exports.getCachePlaylist = exports.addSongsToQueueAsync = exports.getSongsFromUrl = exports.INTERACTION_NEXT_ID = exports.INTERACTION_PREV_ID = void 0;
 const googleapis_1 = require("googleapis");
 const song_1 = require("./song");
 const config_1 = require("../config");
@@ -24,7 +24,30 @@ const prependURL = 'https://www.youtube.com/watch?v=';
 const regexURL = /^.*((youtu.be\/)|(v\/)|(\/u\/\w\/)|(embed\/)|(watch\?))\??v?=?([^#&?]*).*/;
 let cachedPlaylist = [];
 const queueEventEmitter = queueEventEmitter_1.QueueEventEmitter.getInstance();
-function getSongs(queue, url) {
+function getSongsFromUrl(url) {
+    return __awaiter(this, void 0, void 0, function* () {
+        let songs = [];
+        if (url.includes('/playlist?list=')) {
+            let playlistId = url.split('/playlist?list=')[1];
+            playlistId = playlistId.split('&')[0];
+            let nextPageToken = null;
+            do {
+                let batch;
+                [batch, nextPageToken] = yield getPlaylistItems(playlistId, nextPageToken);
+                songs = songs.concat(batch);
+            } while (nextPageToken != null);
+        }
+        else {
+            let song = yield songFromURL(url);
+            if (song != null) {
+                songs.push(song);
+            }
+        }
+        return songs;
+    });
+}
+exports.getSongsFromUrl = getSongsFromUrl;
+function addSongsToQueueAsync(queue, url) {
     return __awaiter(this, void 0, void 0, function* () {
         if (url.includes('/playlist?list=')) {
             let playlistId = url.split('/playlist?list=')[1];
@@ -41,7 +64,7 @@ function getSongs(queue, url) {
         return false;
     });
 }
-exports.getSongs = getSongs;
+exports.addSongsToQueueAsync = addSongsToQueueAsync;
 function getCachePlaylist(queue, refresh = false) {
     return __awaiter(this, void 0, void 0, function* () {
         if (cachedPlaylist.length == 0 || refresh) {
