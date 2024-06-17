@@ -72,7 +72,7 @@ async function play(discord_message: Message, args: string[], preshuffle?: boole
     let sendEmbed: boolean;
     let isPlaylist: boolean;
     if (isURL(args[0])) {
-        isPlaylist = await youtubeClient.getSongs(serverQueue, args[0]);
+        isPlaylist = await youtubeClient.addSongsToQueueAsync(serverQueue, args[0]);
         sendEmbed = false;
     }
     else {
@@ -95,7 +95,7 @@ async function play(discord_message: Message, args: string[], preshuffle?: boole
             return sendEmbed ? musicUtils.songEmbed("Agregado", serverQueue.songs[0], 0) : "Yastas";
         }
         else {
-            return `Agregadas un chingo de canciones`;
+            return "Agregadas un chingo de canciones";
         }
     }
 
@@ -157,7 +157,6 @@ function playSong(guild: Guild, song: any) {
         serverQueue.subscription = serverQueue.connection.subscribe(serverQueue.player);
 
         serverQueue.player.on("stateChange", (oldState, newState) => {
-            console.log("Status: " + newState.status);
             if (serverQueue.currentTrack.ended) {
                 if (!serverQueue.loop)
                     serverQueue.lastPlayed = serverQueue.songs.shift();
@@ -205,48 +204,36 @@ async function stop(discord_message: Message, _args: string[]): Promise<string> 
     serverQueue.player.stop();
 }
 
-// TODO: better returns here
-async function playtop(discord_message: Message, args: string[], status?: { ok: Boolean }) {
+async function playtop(discord_message: Message, args: string[], skipCurrent: boolean = false): Promise<MessageCreateOptions | string> {
     const serverQueue = globalQueues.get(discord_message.guild.id);
-    if (!status) status = { ok: false };
     if (!serverQueue) {
-        status.ok = false;
         return play(discord_message, args);
     }
-    let result;
-    let msg;
+
+    if (args.length == 0) {
+        return "Tocame esta XD";
+    }
+
     if (isURL(args[0])) {
-        result = await youtubeClient.getSongs(serverQueue, args[0]);
-        msg = "Yastas";
-        status.ok = true;
+        let songs = await youtubeClient.getSongsFromUrl(args[0]);
+        if (songs.length == 0) {
+            return "No lo pudo agregar lmao"
+        }
+        serverQueue.songs.splice(1, 0, ...songs);
+        if (skipCurrent) serverQueue.player.stop();
+        return "Yastas";
     }
     else {
-        if (!args.join(' ')) {
-            status.ok = false;
-            return "Tocame esta XD";
-        }
-        result = await youtubeClient.searchYT(args.join(' '));
-        msg = musicUtils.songEmbed("Sigue", result, 0);
-        status.ok = true;
+        let song = await youtubeClient.searchYT(args.join(' '));
+        serverQueue.songs.splice(1, 0, song);
+        if (skipCurrent) serverQueue.player.stop();
+        return musicUtils.songEmbed("Sigue", song, 0);
     }
-    if (!(result instanceof Song)) {
-        status.ok = false;
-        return "Nel, no puedo agregar playlists";
-    }
-    serverQueue.songs.splice(1, 0, result);
-    status.ok = true;
-    return msg;
 }
 
-//TODO: bug playskip without arguments and without queue
 async function playskip(discord_message: Message, args: string[]) {
-    const serverQueue = globalQueues.get(discord_message.guild.id);
-    let status = { ok: false };
-    let reply = await playtop(discord_message, args, status);
-    if (status.ok) {
-        serverQueue.player.stop();
-    }
-    return reply;
+    return playtop(discord_message, args, true);
+
 }
 
 async function shuffle(discord_message: Message, _args: string[]): Promise<string> {

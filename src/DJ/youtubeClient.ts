@@ -18,7 +18,29 @@ const regexURL = /^.*((youtu.be\/)|(v\/)|(\/u\/\w\/)|(embed\/)|(watch\?))\??v?=?
 let cachedPlaylist: Song[] = [];
 const queueEventEmitter = QueueEventEmitter.getInstance();
 
-export async function getSongs(queue: QueueContract, url: string) {
+export async function getSongsFromUrl(url: string) {
+    let songs: Song[] = [];
+    if (url.includes('/playlist?list=')) {
+        let playlistId = url.split('/playlist?list=')[1];
+        playlistId = playlistId.split('&')[0];
+        let nextPageToken: string | null = null;
+        do {
+            let batch: Song[];
+            [batch, nextPageToken] = await getPlaylistItems(playlistId, nextPageToken);
+            songs = songs.concat(batch);
+        } while (nextPageToken != null)
+    }
+    else {
+        let song = await songFromURL(url);
+        if (song != null) {
+            songs.push(song);
+        }
+    }
+
+    return songs
+}
+
+export async function addSongsToQueueAsync(queue: QueueContract, url: string): Promise<boolean> {
     if (url.includes('/playlist?list=')) {
         let playlistId = url.split('/playlist?list=')[1];
         playlistId = playlistId.split('&')[0];
@@ -34,7 +56,7 @@ export async function getSongs(queue: QueueContract, url: string) {
     return false;
 }
 
-export async function getCachePlaylist(queue: QueueContract, refresh = false) : Promise<void> {
+export async function getCachePlaylist(queue: QueueContract, refresh = false): Promise<void> {
     if (cachedPlaylist.length == 0 || refresh) {
         await getPlaylistAsync(queue, config.playlistId, null);
     }
@@ -83,7 +105,7 @@ async function getPlaylistAsync(queue: QueueContract, playlistId: string, nextPa
     var [songs, nextPageToken] = await getPlaylistItems(playlistId, nextPageToken);
 
     queue.songs.push(...songs);
-    if (playlistId == config.playlistId){
+    if (playlistId == config.playlistId) {
         cachedPlaylist.push(...songs);
     }
 
@@ -148,7 +170,7 @@ async function getSongMetadata(url: string) {
     return res.data.items[0];
 }
 
-async function songFromURL(url: string) {
+async function songFromURL(url: string): Promise<Song> {
     let song = await getSongMetadata(url);
     if (!song) {
         return null;
