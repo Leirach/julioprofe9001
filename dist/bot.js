@@ -1,15 +1,6 @@
 "use strict";
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
-    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-};
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.initBot = void 0;
+exports.initBot = initBot;
 const replies_1 = require("./replies");
 const commands_1 = require("./commands");
 const music_1 = require("./DJ/music");
@@ -18,9 +9,8 @@ const config_1 = require("./config");
 const botClass_1 = require("./botClass");
 const voiceStatus = voiceChannelEvents_1.VoiceStatusEventEmitter.getInstance();
 function replyTo(discord_message) {
-    var _a;
     const bot = botClass_1.Bot.getInstance();
-    if (discord_message.author.id == ((_a = bot.user) === null || _a === void 0 ? void 0 : _a.id) || discord_message.author.bot) {
+    if (discord_message.author.id == bot.user?.id || discord_message.author.bot) {
         return;
     }
     //reply to messages
@@ -52,72 +42,64 @@ function respond(word, channel) {
         channel.send(reply);
     }
 }
-function handle(command, args, discord_message) {
-    return __awaiter(this, void 0, void 0, function* () {
-        //commands are async functions, promise has to be handled
-        //checks first if the command exists before trying to execute it
-        //in commands.js
-        if (commands_1.commands[command]) {
-            let message = yield commands_1.commands[command](discord_message, args);
-            if (message) {
-                discord_message.channel.send(message).catch(err => {
-                    console.error("lmao error enviando mensaje");
-                    console.error(err);
-                });
-            }
+async function handle(command, args, discord_message) {
+    //commands are async functions, promise has to be handled
+    //checks first if the command exists before trying to execute it
+    //in commands.js
+    if (commands_1.commands[command]) {
+        let message = await commands_1.commands[command](discord_message, args);
+        if (message) {
+            discord_message.channel.send(message).catch(err => {
+                console.error("lmao error enviando mensaje");
+                console.error(err);
+            });
         }
-    });
+    }
 }
-function djJulio(command, args, discord_message) {
-    return __awaiter(this, void 0, void 0, function* () {
-        if (music_1.musicCommands[command]) {
-            let message = yield music_1.musicCommands[command](discord_message, args);
-            if (message) {
-                discord_message.channel.send(message);
-            }
+async function djJulio(command, args, discord_message) {
+    if (music_1.musicCommands[command]) {
+        let message = await music_1.musicCommands[command](discord_message, args);
+        if (message) {
+            discord_message.channel.send(message);
         }
-    });
+    }
 }
 function react(discord_message) {
     let message = discord_message.content.toLowerCase();
     replies_1.reactions.forEach(reaction => {
-        reaction.triggers.forEach((trigger) => __awaiter(this, void 0, void 0, function* () {
+        reaction.triggers.forEach(async (trigger) => {
             //  original
             // if (message.includes(trigger)) {
             //     await discord_message.react(reaction.emoji);
             // }
             let regex = new RegExp(trigger);
             if (regex.test(message)) {
-                yield discord_message.react(reaction.emoji);
-            }
-        }));
-    });
-}
-function initBot(authToken) {
-    return __awaiter(this, void 0, void 0, function* () {
-        const bot = botClass_1.Bot.getInstance();
-        yield bot.login(authToken);
-        console.log('Connected!');
-        if (bot.user)
-            console.log(`${bot.user.username} - ${bot.user.id}`);
-        bot.on("messageCreate", replyTo);
-        // checks for empty voice channel to disconnect
-        bot.on("voiceStateUpdate", (oldState, newState) => {
-            var _a, _b, _c, _d;
-            // oldState check for disconnects
-            if (((_a = oldState.channel) === null || _a === void 0 ? void 0 : _a.members.size) == 1) {
-                // emit if bot is last in server
-                if (((_b = oldState.channel) === null || _b === void 0 ? void 0 : _b.members.first().id) == bot.user.id) {
-                    voiceStatus.emitEmpty(oldState.guild.id);
-                }
-            }
-            if (((_c = newState.channel) === null || _c === void 0 ? void 0 : _c.members.size) > 1) {
-                // emit only if bot is still in server
-                if ((_d = newState.channel) === null || _d === void 0 ? void 0 : _d.members.get(bot.user.id)) {
-                    voiceStatus.emitJoined(oldState.guild.id);
-                }
+                await discord_message.react(reaction.emoji);
             }
         });
     });
 }
-exports.initBot = initBot;
+async function initBot(authToken) {
+    const bot = botClass_1.Bot.getInstance();
+    await bot.login(authToken);
+    console.log('Connected!');
+    if (bot.user)
+        console.log(`${bot.user.username} - ${bot.user.id}`);
+    bot.on("messageCreate", replyTo);
+    // checks for empty voice channel to disconnect
+    bot.on("voiceStateUpdate", (oldState, newState) => {
+        // oldState check for disconnects
+        if (oldState.channel?.members.size == 1) {
+            // emit if bot is last in server
+            if (oldState.channel?.members.first().id == bot.user.id) {
+                voiceStatus.emitEmpty(oldState.guild.id);
+            }
+        }
+        if (newState.channel?.members.size > 1) {
+            // emit only if bot is still in server
+            if (newState.channel?.members.get(bot.user.id)) {
+                voiceStatus.emitJoined(oldState.guild.id);
+            }
+        }
+    });
+}

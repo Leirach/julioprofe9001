@@ -1,6 +1,10 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.shuffleArray = exports.isURL = exports.sleep = exports.randBool = exports.getRandom = void 0;
+exports.getRandom = getRandom;
+exports.randBool = randBool;
+exports.sleep = sleep;
+exports.isURL = isURL;
+exports.shuffleArray = shuffleArray;
 /**
  * Returns a random element from given array.
  * @param {array} arr
@@ -9,7 +13,6 @@ function getRandom(arr) {
     var idx = Math.floor(Math.random() * arr.length);
     return arr[idx];
 }
-exports.getRandom = getRandom;
 /**
  * Given probabilty % in decimal number, has that chance of returning true.
  * @param probability must be between 0 and 1
@@ -23,7 +26,6 @@ function randBool(probability) {
         return false;
     }
 }
-exports.randBool = randBool;
 /**
  * Sets a timer for secs sent.
  * @param sec time in seconds to sleep
@@ -31,7 +33,6 @@ exports.randBool = randBool;
 function sleep(sec) {
     return new Promise(resolve => setTimeout(resolve, sec * 1000));
 }
-exports.sleep = sleep;
 /**
  * Return checks if a given string is a url
  * @param str
@@ -40,7 +41,6 @@ function isURL(str) {
     var pattern = new RegExp("^(https?\:\/\/)?(www\.)?(youtube\.com|youtu\.?be)\/.+$");
     return pattern.test(str);
 }
-exports.isURL = isURL;
 /**
  * Shuffles any given array
  * @param array
@@ -59,4 +59,3 @@ function shuffleArray(array) {
     }
     return array;
 }
-exports.shuffleArray = shuffleArray;
