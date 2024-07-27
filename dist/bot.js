@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.initBot = initBot;
+exports.initBot = void 0;
 const replies_1 = require("./replies");
 const commands_1 = require("./commands");
 const music_1 = require("./DJ/music");
@@ -103,3 +103,4 @@ async function initBot(authToken) {
         }
     });
 }
+exports.initBot = initBot;

@@ -1,6 +1,6 @@
 import { Message, Guild, EmbedBuilder, VoiceChannel, PermissionFlagsBits, TextChannel, MessageCreateOptions } from "discord.js";
 import { joinVoiceChannel, createAudioResource, createAudioPlayer } from '@discordjs/voice';
-import ytdl from 'ytdl-core';
+import ytdl, { Agent } from '@distube/ytdl-core';
 import { QueueContract } from './queueContract';
 import * as musicUtils from './musicUtils';
 import * as youtubeClient from './youtubeClient';
@@ -8,13 +8,14 @@ import { isURL, shuffleArray } from "../utilities";
 import { config } from '../config'
 import { GlobalQueueManager } from "./globalQueueManager";
 import { Bot } from "../botClass";
-import { Song } from "./song";
 
 //TODO: separate file into different commands/utils or something else
 
 const bufferSize = 1 << 25;
 
 let globalQueues = GlobalQueueManager.getInstance();
+
+let ytdlAgent: Agent;
 
 type FunctionDictionary = { [key: string]: (...args: any) => Promise<MessageCreateOptions | string> };
 export let musicCommands: FunctionDictionary = {
@@ -128,24 +129,18 @@ async function play(discord_message: Message, args: string[], preshuffle?: boole
 function playSong(guild: Guild, song: any) {
     const serverQueue = globalQueues.get(guild.id);
     if (!song) {
-        serverQueue.subscription.unsubscribe();
-        serverQueue.connection.destroy();
+        serverQueue?.subscription.unsubscribe();
+        serverQueue?.connection.destroy();
         globalQueues.delete(guild.id);
         return;
     }
-
-    var requestOptions = process.env.YT_COOKIE ? {
-        headers: {
-            cookie: process.env.YT_COOKIE
-        }
-    } : {};
 
     // Help, im only supposed to increase this param in ytdl and i dont even know why
     // { highWaterMark: 1024 * 1024 * 10 } // 10mb buffer, supposedly
     const stream = ytdl(song.url, {
         filter: 'audioonly',
         highWaterMark: bufferSize,
-        requestOptions: requestOptions
+        agent: GetAgent()
     });
 
     serverQueue.currentTrack = createAudioResource(stream, { inlineVolume: true });
@@ -336,4 +331,12 @@ async function lastPlayed(discord_message: Message, args: string[]) {
     // send last played embed
     const lp = serverQueue.lastPlayed;
     return musicUtils.songEmbed("Last played", lp, 0);
+}
+
+// TODO: some major refactor + making this part of a singleton of sorts
+function GetAgent() {
+    if (!ytdlAgent) {
+        ytdlAgent = ytdl.createAgent(JSON.parse(process.env.YT_COOKIE_JSON));
+    }
+    return ytdlAgent;
 }

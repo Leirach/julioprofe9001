@@ -1,10 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.INTERACTION_NEXT_ID = exports.INTERACTION_PREV_ID = void 0;
-exports.getSongsFromUrl = getSongsFromUrl;
-exports.addSongsToQueueAsync = addSongsToQueueAsync;
-exports.getCachePlaylist = getCachePlaylist;
-exports.searchYT = searchYT;
+exports.searchYT = exports.getCachePlaylist = exports.addSongsToQueueAsync = exports.getSongsFromUrl = exports.INTERACTION_NEXT_ID = exports.INTERACTION_PREV_ID = void 0;
 const googleapis_1 = require("googleapis");
 const song_1 = require("./song");
 const config_1 = require("../config");
@@ -39,6 +35,7 @@ async function getSongsFromUrl(url) {
     }
     return songs;
 }
+exports.getSongsFromUrl = getSongsFromUrl;
 async function addSongsToQueueAsync(queue, url) {
     if (url.includes('/playlist?list=')) {
         let playlistId = url.split('/playlist?list=')[1];
@@ -54,6 +51,7 @@ async function addSongsToQueueAsync(queue, url) {
     queue.songs.push(await songFromURL(url));
     return false;
 }
+exports.addSongsToQueueAsync = addSongsToQueueAsync;
 async function getCachePlaylist(queue, refresh = false) {
     if (cachedPlaylist.length == 0 || refresh) {
         await getPlaylistAsync(queue, config_1.config.playlistId, null);
@@ -63,6 +61,7 @@ async function getCachePlaylist(queue, refresh = false) {
         queueEventEmitter.emitPlaylistLoaded(queue.id);
     }
 }
+exports.getCachePlaylist = getCachePlaylist;
 async function searchYT(keyword) {
     try {
         let res = await youtube.search.list({
@@ -90,6 +89,7 @@ async function searchYT(keyword) {
         throw err;
     }
 }
+exports.searchYT = searchYT;
 async function getPlaylistAsync(queue, playlistId, nextPageToken) {
     var [songs, nextPageToken] = await getPlaylistItems(playlistId, nextPageToken);
     queue.songs.push(...songs);

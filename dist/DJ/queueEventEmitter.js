@@ -1,10 +1,10 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.QueueEventEmitter = void 0;
-const events_1 = require("events");
+const node_events_1 = require("node:events");
 class QueueEventEmitter {
     constructor() {
-        this.eventEmitter = new events_1.EventEmitter();
+        this.eventEmitter = new node_events_1.EventEmitter();
     }
     static getInstance() {
         if (!QueueEventEmitter.instance) {

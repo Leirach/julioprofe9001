@@ -29,7 +29,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.musicCommands = void 0;
 const discord_js_1 = require("discord.js");
 const voice_1 = require("@discordjs/voice");
-const ytdl_core_1 = __importDefault(require("ytdl-core"));
+const ytdl_core_1 = __importDefault(require("@distube/ytdl-core"));
 const queueContract_1 = require("./queueContract");
 const musicUtils = __importStar(require("./musicUtils"));
 const youtubeClient = __importStar(require("./youtubeClient"));
@@ -40,6 +40,7 @@ const botClass_1 = require("../botClass");
 //TODO: separate file into different commands/utils or something else
 const bufferSize = 1 << 25;
 let globalQueues = globalQueueManager_1.GlobalQueueManager.getInstance();
+let ytdlAgent;
 exports.musicCommands = {
     "play": play,
     "queue": queue,
@@ -143,22 +144,17 @@ async function play(discord_message, args, preshuffle) {
 function playSong(guild, song) {
     const serverQueue = globalQueues.get(guild.id);
     if (!song) {
-        serverQueue.subscription.unsubscribe();
-        serverQueue.connection.destroy();
+        serverQueue?.subscription.unsubscribe();
+        serverQueue?.connection.destroy();
         globalQueues.delete(guild.id);
         return;
     }
-    var requestOptions = process.env.YT_COOKIE ? {
-        headers: {
-            cookie: process.env.YT_COOKIE
-        }
-    } : {};
     // Help, im only supposed to increase this param in ytdl and i dont even know why
     // { highWaterMark: 1024 * 1024 * 10 } // 10mb buffer, supposedly
     const stream = (0, ytdl_core_1.default)(song.url, {
         filter: 'audioonly',
         highWaterMark: bufferSize,
-        requestOptions: requestOptions
+        agent: GetAgent()
     });
     serverQueue.currentTrack = (0, voice_1.createAudioResource)(stream, { inlineVolume: true });
     let vol = musicUtils.getVolume(song.url);
@@ -324,4 +320,11 @@ async function lastPlayed(discord_message, args) {
     // send last played embed
     const lp = serverQueue.lastPlayed;
     return musicUtils.songEmbed("Last played", lp, 0);
+}
+// TODO: some major refactor + making this part of a singleton of sorts
+function GetAgent() {
+    if (!ytdlAgent) {
+        ytdlAgent = ytdl_core_1.default.createAgent(JSON.parse(process.env.YT_COOKIE_JSON));
+    }
+    return ytdlAgent;
 }

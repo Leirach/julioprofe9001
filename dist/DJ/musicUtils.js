@@ -3,12 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.QUEUE_PAGE_SIZE = exports.INTERACTION_NEXT_ID = exports.INTERACTION_PREV_ID = void 0;
-exports.songEmbed = songEmbed;
-exports.queueEmbedMessage = queueEmbedMessage;
-exports.readVolumes = readVolumes;
-exports.getVolume = getVolume;
-exports.setVolume = setVolume;
+exports.setVolume = exports.getVolume = exports.readVolumes = exports.queueEmbedMessage = exports.songEmbed = exports.QUEUE_PAGE_SIZE = exports.INTERACTION_NEXT_ID = exports.INTERACTION_PREV_ID = void 0;
 const luxon_1 = require("luxon");
 const config_1 = require("../config");
 const fs_1 = __importDefault(require("fs"));
@@ -41,6 +36,7 @@ function songEmbed(title, song, streamTime) {
         .setImage(song.thumbnail);
     return { embeds: [embed] };
 }
+exports.songEmbed = songEmbed;
 function queueEmbedMessage(queue, start_idx) {
     const end = start_idx + exports.QUEUE_PAGE_SIZE;
     const cur_queue = queue.slice(start_idx, end);
@@ -73,6 +69,7 @@ function queueEmbedMessage(queue, start_idx) {
         ]
     };
 }
+exports.queueEmbedMessage = queueEmbedMessage;
 function readVolumes() {
     console.log("reading volumes csv");
     let stream;
@@ -92,6 +89,7 @@ function readVolumes() {
         volumesFile = fs_1.default.openSync(volumesCSV, 'a');
     });
 }
+exports.readVolumes = readVolumes;
 function writeVolumes() {
     var file = fs_1.default.createWriteStream(volumesCSV);
     file.on('error', function (err) {
@@ -106,7 +104,9 @@ function getVolume(url) {
     let vol = volumes[url] || 5;
     return vol;
 }
+exports.getVolume = getVolume;
 function setVolume(url, volume) {
     volumes[url] = volume;
     fs_1.default.appendFileSync(volumesFile, `${url},${volume}\n`);
 }
+exports.setVolume = setVolume;
