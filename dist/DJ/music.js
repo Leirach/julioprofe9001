@@ -324,7 +324,11 @@ async function lastPlayed(discord_message, args) {
 // TODO: some major refactor + making this part of a singleton of sorts
 function GetAgent() {
     if (!ytdlAgent) {
-        ytdlAgent = ytdl_core_1.default.createAgent(JSON.parse(process.env.YT_COOKIE_JSON));
+        let cookie = null;
+        if (process.env.YT_COOKIE_JSON) {
+            cookie = JSON.parse(process.env.YT_COOKIE_JSON);
+        }
+        ytdlAgent = ytdl_core_1.default.createAgent(cookie);
     }
     return ytdlAgent;
 }
